@@ -196,7 +196,7 @@ class _MedicationPageState extends State<MedicationPage> { List<Map<String, Stri
     return Scaffold(
       appBar: AppBar(
         title: Text('💊 MediHora'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.red,
         centerTitle: true,
       ),
       drawer: ThemeDrawer(

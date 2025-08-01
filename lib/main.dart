@@ -5,7 +5,6 @@ import 'package:medihora/models/medicamento.dart';
 import 'theme_drawer.dart';
 
 late Isar isar;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationDocumentsDirectory();

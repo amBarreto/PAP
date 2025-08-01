@@ -1,30 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:medihora/models/medicamento.dart';
 import 'theme_drawer.dart';
 
-void main() {
-  runApp(MediHoraApp());
+late Isar isar;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final dir = await getApplicationDocumentsDirectory();
+  isar = await Isar.open(
+    [MedicamentoSchema],
+    directory: dir.path,
+  );
+
+  runApp(const MediHoraApp());
 }
 
-class MediHoraApp extends StatefulWidget{
-  @override
+class MediHoraApp extends StatefulWidget {
+  const MediHoraApp({super.key});
 
+  @override
   State<MediHoraApp> createState() => _MediHoraAppState();
 }
 
 class _MediHoraAppState extends State<MediHoraApp> {
-
   ThemeMode _themeMode = ThemeMode.light;
 
-  void toggleTheme(){
+  void toggleTheme() {
     setState(() {
-      _themeMode =  
-            _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode =
+          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'MediHora',
       debugShowCheckedModeBanner: false,
@@ -45,9 +56,7 @@ class _MediHoraAppState extends State<MediHoraApp> {
     );
   }
 }
-
 class MedicationPage extends StatefulWidget {
-
   final bool isDarkMode;
   final VoidCallback toggleTheme;
 
@@ -61,142 +70,98 @@ class MedicationPage extends StatefulWidget {
   _MedicationPageState createState() => _MedicationPageState();
 }
 
-class _MedicationPageState extends State<MedicationPage> { List<Map<String, String>> meds = [];
+class _MedicationPageState extends State<MedicationPage> {
+  List<Medicamento> meds = [];
 
-  final nameController = TextEditingController();
+  final mediController = TextEditingController();
   final hourController = TextEditingController();
   final utenteController = TextEditingController();
 
-  void addMed() {
-    final nome = nameController.text.trim();
+  DateTimeRange? selectedDateRange;
+  Set<int> selectedDays = {};
+  final List<String> daysLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+  @override
+  void initState() {
+    super.initState();
+    loadMeds();
+  }
+
+  Future<void> loadMeds() async {
+    final all = await isar.medicamentos.where().findAll();
+    setState(() {
+      meds = all;
+    });
+  }
+
+  void pickDateRange() async {
+    final now = DateTime.now();
+    final newDateRange = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 5),
+      initialDateRange: selectedDateRange,
+    );
+    if (newDateRange != null) {
+      setState(() {
+        selectedDateRange = newDateRange;
+      });
+    }
+  }
+
+  Future<void> addMed() async {
+    final medicamento = mediController.text.trim();
     final hora = hourController.text.trim();
     final utente = utenteController.text.trim();
 
-    if (nome.isEmpty || hora.isEmpty || utente.isEmpty) {
+    if (medicamento.isEmpty || hora.isEmpty || utente.isEmpty || selectedDateRange == null || selectedDays.isEmpty) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => const AlertDialog(
           title: Text('Aviso!'),
-          content: Text('Preencha todos os campos'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK'),
-            ),
-          ],
+          content: Text('Preencha todos os campos, selecione o período da toma e os dias da semana'),
         ),
       );
       return;
     }
 
-    setState(() {
-      meds.add({'nome': nome, 'hora': hora, 'utente': utente});
-    });
+    final novoMed = Medicamento(
+      medicamento: medicamento,
+      hora: hora,
+      utente: utente,
+      dataInicio: selectedDateRange!.start,
+      dataFim: selectedDateRange!.end,
+      diasSemana: selectedDays.toList(),
+    );
 
-    nameController.clear();
+    await isar.writeTxn(() async => await isar.medicamentos.put(novoMed));
+    await loadMeds();
+
+    mediController.clear();
     hourController.clear();
     utenteController.clear();
+    selectedDateRange = null;
+    selectedDays.clear();
   }
 
-  void removeMed(int index) {
-    setState(() {
-      meds.removeAt(index);
+  Future<void> removeMed(int index) async {
+    await isar.writeTxn(() async {
+      await isar.medicamentos.delete(meds[index].id);
     });
+    await loadMeds();
   }
 
-  void editMed(int index) {
-
-    final editUtenteController =TextEditingController(text: meds[index]['utente']);
-    final editNameController =TextEditingController(text: meds[index]['nome']);
-    final editHourController =TextEditingController(text: meds[index]['hora']);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Editar Medicação'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              
-              TextField(
-                controller: editUtenteController,
-                decoration: InputDecoration(
-                  labelText: 'Nome do Utente',
-                  prefixIcon: Icon(Icons.person),
-                ),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: editNameController,
-                decoration: InputDecoration(
-                  labelText: 'Nome do medicamento',
-                  prefixIcon: Icon(Icons.medication_outlined),
-                ),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: editHourController,
-                decoration: InputDecoration(
-                  labelText: 'Hora (ex: 08:00)',
-                  prefixIcon: Icon(Icons.access_time),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cancelar
-              },
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final newName = editNameController.text.trim();
-                final newHour = editHourController.text.trim();
-                final newUtente = editUtenteController.text.trim();
-
-                if (newName.isEmpty || newHour.isEmpty || newUtente.isEmpty) {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text('Aviso!'),
-                      content: Text('Preencha todos os campos'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                  return;
-                }
-
-                setState(() {
-                  meds[index] = {
-                    'nome': newName,
-                    'hora': newHour,
-                    'utente': newUtente,
-                  };
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text('Guardar'),
-            ),
-          ],
-        );
-      },
-    );
+  String formatDays(List<int> days) {
+    final sortedDays = List<int>.from(days)..sort();
+    return sortedDays.map((d) => daysLabels[d - 1]).join(', ');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('💊 MediHora'),
-        backgroundColor: Colors.red,
+        title: const Text('💊 MediHora'),
+        backgroundColor: Colors.blue,
         centerTitle: true,
       ),
       drawer: ThemeDrawer(
@@ -205,111 +170,132 @@ class _MedicationPageState extends State<MedicationPage> { List<Map<String, Stri
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Card(
                 elevation: 3,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       TextField(
                         controller: utenteController,
                         decoration: InputDecoration(
                           labelText: 'Nome do Utente',
-                          prefixIcon: Icon(Icons.person),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                          prefixIcon: const Icon(Icons.person),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       TextField(
-                        controller: nameController,
+                        controller: mediController,
                         decoration: InputDecoration(
                           labelText: 'Nome do medicamento',
-                          prefixIcon: Icon(Icons.medication_outlined),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                          prefixIcon: const Icon(Icons.medication_outlined),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: hourController,
                         decoration: InputDecoration(
                           labelText: 'Hora (ex: 08:00)',
-                          prefixIcon: Icon(Icons.access_time),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                          prefixIcon: const Icon(Icons.access_time),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedDateRange == null
+                                  ? 'Nenhum período selecionado'
+                                  : 'De: ${selectedDateRange!.start.day}/${selectedDateRange!.start.month}/${selectedDateRange!.start.year} '
+                                    'Até: ${selectedDateRange!.end.day}/${selectedDateRange!.end.month}/${selectedDateRange!.end.year}',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: pickDateRange,
+                            child: const Text('Selecionar Período'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 5,
+                        children: List.generate(7, (index) {
+                          final dayNum = index + 1;
+                          final isSelected = selectedDays.contains(dayNum);
+                          return FilterChip(
+                            label: Text(daysLabels[index]),
+                            selected: isSelected,
+                            onSelected: (bool selected) {
+                              setState(() {
+                                if (selected) {
+                                  selectedDays.add(dayNum);
+                                } else {
+                                  selectedDays.remove(dayNum);
+                                }
+                              });
+                            },
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 10),
                       ElevatedButton.icon(
                         onPressed: addMed,
-                        icon: Icon(Icons.add),
-                        label: Text('Adicionar Medicação'),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Adicionar Medicação'),
                         style: ElevatedButton.styleFrom(
-                          minimumSize: Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                          minimumSize: const Size(double.infinity, 48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               meds.isEmpty
-                  ? Text(
-                      "Nenhuma medicação foi registada!",
-                      style: TextStyle(color: Colors.grey),
-                    )
+                  ? const Text("Nenhuma medicação foi registada!", style: TextStyle(color: Colors.grey))
                   : ListView.builder(
                       shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: meds.length,
                       itemBuilder: (context, index) {
                         final med = meds[index];
+                        final dateRangeText =
+                            'De ${med.dataInicio.day}/${med.dataInicio.month}/${med.dataInicio.year} até ${med.dataFim.day}/${med.dataFim.month}/${med.dataFim.year}';
                         return Card(
                           elevation: 2,
-                          margin: EdgeInsets.symmetric(vertical: 6),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           child: ListTile(
-                            leading: Icon(Icons.medication_liquid,
-                                color: Colors.teal),
+                            leading: const Icon(Icons.medication_liquid, color: Colors.teal),
                             title: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Text(med.utente, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                const SizedBox(height: 4),
+                                Text(med.medicamento, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 2),
+                                Text('Hora: ${med.hora}'),
+                                const SizedBox(height: 2),
+                                Text(dateRangeText, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                                const SizedBox(height: 2),
                                 Text(
-                                  med['utente']!,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16),
+                                  'Dias: ${formatDays(med.diasSemana)}',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueGrey[700]),
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  med['nome']!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                SizedBox(height: 2),
-                                Text('Hora: ${med['hora']}'),
                               ],
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.blue),
-                                  onPressed: () => editMed(index),
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => removeMed(index),
-                                ),
-                              ],
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => removeMed(index),
                             ),
                           ),
                         );

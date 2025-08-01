@@ -23,7 +23,7 @@ class MediHoraApp extends StatefulWidget {
   State<MediHoraApp> createState() => _MediHoraAppState();
 }
 
-//testes
+
 
 class _MediHoraAppState extends State<MediHoraApp> {
   ThemeMode _themeMode = ThemeMode.light;

@@ -5,6 +5,7 @@ import 'package:medihora/models/medicamento.dart';
 import 'theme_drawer.dart';
 
 late Isar isar;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationDocumentsDirectory();
@@ -22,8 +23,6 @@ class MediHoraApp extends StatefulWidget {
   @override
   State<MediHoraApp> createState() => _MediHoraAppState();
 }
-
-
 
 class _MediHoraAppState extends State<MediHoraApp> {
   ThemeMode _themeMode = ThemeMode.light;
@@ -57,6 +56,7 @@ class _MediHoraAppState extends State<MediHoraApp> {
     );
   }
 }
+
 class MedicationPage extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
@@ -150,6 +150,119 @@ class _MedicationPageState extends State<MedicationPage> {
       await isar.medicamentos.delete(meds[index].id);
     });
     await loadMeds();
+  }
+
+  void editarMed(Medicamento med) {
+    final nomeController = TextEditingController(text: med.medicamento);
+    final horaController = TextEditingController(text: med.hora);
+    final utenteController = TextEditingController(text: med.utente);
+    DateTimeRange range = DateTimeRange(start: med.dataInicio, end: med.dataFim);
+    Set<int> diasSelecionados = med.diasSemana.toSet();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Editar Medicação'),
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: utenteController,
+                    decoration: const InputDecoration(labelText: 'Utente'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nomeController,
+                    decoration: const InputDecoration(labelText: 'Medicamento'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: horaController,
+                    decoration: const InputDecoration(labelText: 'Hora (ex: 08:00)'),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'De: ${range.start.day}/${range.start.month}/${range.start.year} '
+                    'Até: ${range.end.day}/${range.end.month}/${range.end.year}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final novoRange = await showDateRangePicker(
+                        context: context,
+                        initialDateRange: range,
+                        firstDate: DateTime(DateTime.now().year - 1),
+                        lastDate: DateTime(DateTime.now().year + 5),
+                      );
+                      if (novoRange != null) {
+                        setStateDialog(() => range = novoRange);
+                      }
+                    },
+                    child: const Text('Alterar Período'),
+                  ),
+                  Wrap(
+                    spacing: 5,
+                    children: List.generate(7, (index) {
+                      final dia = index + 1;
+                      final selecionado = diasSelecionados.contains(dia);
+                      return FilterChip(
+                        label: Text(daysLabels[index]),
+                        selected: selecionado,
+                        onSelected: (bool selected) {
+                          setStateDialog(() {
+                            if (selected) {
+                              diasSelecionados.add(dia);
+                            } else {
+                              diasSelecionados.remove(dia);
+                            }
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final novoNome = nomeController.text.trim();
+                  final novaHora = horaController.text.trim();
+                  final novoUtente = utenteController.text.trim();
+
+                  if (novoNome.isEmpty || novaHora.isEmpty || novoUtente.isEmpty || diasSelecionados.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Preencha todos os campos')),
+                    );
+                    return;
+                  }
+
+                  await isar.writeTxn(() async {
+                    med.medicamento = novoNome;
+                    med.hora = novaHora;
+                    med.utente = novoUtente;
+                    med.dataInicio = range.start;
+                    med.dataFim = range.end;
+                    med.diasSemana = diasSelecionados.toList();
+                    await isar.medicamentos.put(med);
+                  });
+
+                  Navigator.pop(context);
+                  await loadMeds();
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          );
+        });
+      },
+    );
   }
 
   String formatDays(List<int> days) {
@@ -280,9 +393,9 @@ class _MedicationPageState extends State<MedicationPage> {
                             title: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(med.utente, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text('Utente: ${med.utente}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 const SizedBox(height: 4),
-                                Text(med.medicamento, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text('Medicamento: ${med.medicamento}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 2),
                                 Text('Hora: ${med.hora}'),
                                 const SizedBox(height: 2),
@@ -294,9 +407,18 @@ class _MedicationPageState extends State<MedicationPage> {
                                 ),
                               ],
                             ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => removeMed(index),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  onPressed: () => editarMed(med),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => removeMed(index),
+                                ),
+                              ],
                             ),
                           ),
                         );

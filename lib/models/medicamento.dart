@@ -2,16 +2,16 @@ import 'package:isar/isar.dart';
 
 part 'medicamento.g.dart';
 
-@collection
+@Collection()
 class Medicamento {
   Id id = Isar.autoIncrement;
 
-  final String medicamento;
-  final String hora;
-  final String utente;
-  final DateTime dataInicio;
-  final DateTime dataFim;
-  final List<int> diasSemana;
+  late String medicamento;
+  late String hora;
+  late String utente;
+  late DateTime dataInicio;
+  late DateTime dataFim;
+  late List<int> diasSemana;
 
   Medicamento({
     required this.medicamento,

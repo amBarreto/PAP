@@ -42,8 +42,13 @@ const MedicamentoSchema = CollectionSchema(
       name: r'medicamento',
       type: IsarType.string,
     ),
-    r'utente': PropertySchema(
+    r'permanente': PropertySchema(
       id: 5,
+      name: r'permanente',
+      type: IsarType.bool,
+    ),
+    r'utente': PropertySchema(
+      id: 6,
       name: r'utente',
       type: IsarType.string,
     )
@@ -86,7 +91,8 @@ void _medicamentoSerialize(
   writer.writeLongList(offsets[2], object.diasSemana);
   writer.writeString(offsets[3], object.hora);
   writer.writeString(offsets[4], object.medicamento);
-  writer.writeString(offsets[5], object.utente);
+  writer.writeBool(offsets[5], object.permanente);
+  writer.writeString(offsets[6], object.utente);
 }
 
 Medicamento _medicamentoDeserialize(
@@ -96,12 +102,13 @@ Medicamento _medicamentoDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Medicamento(
-    dataFim: reader.readDateTime(offsets[0]),
-    dataInicio: reader.readDateTime(offsets[1]),
+    dataFim: reader.readDateTimeOrNull(offsets[0]),
+    dataInicio: reader.readDateTimeOrNull(offsets[1]),
     diasSemana: reader.readLongList(offsets[2]) ?? [],
     hora: reader.readString(offsets[3]),
     medicamento: reader.readString(offsets[4]),
-    utente: reader.readString(offsets[5]),
+    permanente: reader.readBool(offsets[5]),
+    utente: reader.readString(offsets[6]),
   );
   object.id = id;
   return object;
@@ -115,9 +122,9 @@ P _medicamentoDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 1:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
       return (reader.readLongList(offset) ?? []) as P;
     case 3:
@@ -125,6 +132,8 @@ P _medicamentoDeserializeProp<P>(
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readBool(offset)) as P;
+    case 6:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -224,8 +233,26 @@ extension MedicamentoQueryWhere
 
 extension MedicamentoQueryFilter
     on QueryBuilder<Medicamento, Medicamento, QFilterCondition> {
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dataFimIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'dataFim',
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dataFimIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'dataFim',
+      ));
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dataFimEqualTo(
-      DateTime value) {
+      DateTime? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'dataFim',
@@ -236,7 +263,7 @@ extension MedicamentoQueryFilter
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
       dataFimGreaterThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -249,7 +276,7 @@ extension MedicamentoQueryFilter
   }
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dataFimLessThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -262,8 +289,8 @@ extension MedicamentoQueryFilter
   }
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dataFimBetween(
-    DateTime lower,
-    DateTime upper, {
+    DateTime? lower,
+    DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -279,7 +306,25 @@ extension MedicamentoQueryFilter
   }
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
-      dataInicioEqualTo(DateTime value) {
+      dataInicioIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'dataInicio',
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dataInicioIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'dataInicio',
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dataInicioEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'dataInicio',
@@ -290,7 +335,7 @@ extension MedicamentoQueryFilter
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
       dataInicioGreaterThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -304,7 +349,7 @@ extension MedicamentoQueryFilter
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
       dataInicioLessThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -318,8 +363,8 @@ extension MedicamentoQueryFilter
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
       dataInicioBetween(
-    DateTime lower,
-    DateTime upper, {
+    DateTime? lower,
+    DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -799,6 +844,16 @@ extension MedicamentoQueryFilter
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      permanenteEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'permanente',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> utenteEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -990,6 +1045,18 @@ extension MedicamentoQuerySortBy
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByPermanente() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'permanente', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByPermanenteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'permanente', Sort.desc);
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByUtente() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'utente', Sort.asc);
@@ -1065,6 +1132,18 @@ extension MedicamentoQuerySortThenBy
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByPermanente() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'permanente', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByPermanenteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'permanente', Sort.desc);
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByUtente() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'utente', Sort.asc);
@@ -1112,6 +1191,12 @@ extension MedicamentoQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByPermanente() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'permanente');
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByUtente(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1128,13 +1213,13 @@ extension MedicamentoQueryProperty
     });
   }
 
-  QueryBuilder<Medicamento, DateTime, QQueryOperations> dataFimProperty() {
+  QueryBuilder<Medicamento, DateTime?, QQueryOperations> dataFimProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'dataFim');
     });
   }
 
-  QueryBuilder<Medicamento, DateTime, QQueryOperations> dataInicioProperty() {
+  QueryBuilder<Medicamento, DateTime?, QQueryOperations> dataInicioProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'dataInicio');
     });
@@ -1155,6 +1240,12 @@ extension MedicamentoQueryProperty
   QueryBuilder<Medicamento, String, QQueryOperations> medicamentoProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'medicamento');
+    });
+  }
+
+  QueryBuilder<Medicamento, bool, QQueryOperations> permanenteProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'permanente');
     });
   }
 

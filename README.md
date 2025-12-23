@@ -1,18 +1,46 @@
-# MediHora
+# 💊 MediHora
 
-A new Flutter project.
+**MediHora** é uma aplicação móvel desenvolvida em **Flutter** com o objetivo de auxiliar na **gestão de medicação**, permitindo registar, visualizar e organizar tomas de medicamentos de forma simples e intuitiva.
 
-## Getting Started
+Este projeto foi desenvolvido no âmbito da **PAP (Prova de Aptidão Profissional)**.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🎯 Objetivo da Aplicação
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+A aplicação permite ao utilizador:
+- Registar medicamentos associados a um utente
+- Definir a hora da toma
+- Selecionar os dias da semana
+- Indicar se a medicação é **permanente** ou **temporária**
+- Visualizar e remover medicações registadas
+- Alternar entre **modo claro e modo escuro**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
 
+## 🧩 Funcionalidades Principais
+
+- 📋 Registo de medicação
+- 👤 Associação a um utente
+- ⏰ Definição da hora da toma
+- 📅 Seleção de dias da semana
+- ♾️ Opção de medicação permanente (sem período)
+- 📆 Medicação temporária com período definido
+- 🌓 Tema claro / escuro
+- 🗑️ Remoção de registos
+- 📱 Interface simples e responsiva
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Flutter**
+- **Dart**
+- **Material Design**
+- (Opcional) ISAR Database – persistência local *(em fase de testes)*
+- Git & GitHub para controlo de versões
+
+---
+
+## 📂 Estrutura do Projeto
 

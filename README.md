@@ -23,6 +23,7 @@ A aplicação permite ao utilizador:
 - 📋 Registo de medicação
 - 👤 Associação a um utente
 - ⏰ Definição da hora da toma
+- ⏰ Alarmes *(em desenvolvimento)*
 - 📅 Seleção de dias da semana
 - ♾️ Opção de medicação permanente (sem período)
 - 📆 Medicação temporária com período definido

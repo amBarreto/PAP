@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:medihora/models/medicamento.dart';
+import 'models/medicamento.dart';
 import 'theme_drawer.dart';
 
 late Isar isar;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   final dir = await getApplicationDocumentsDirectory();
   isar = await Isar.open(
     [MedicamentoSchema],
@@ -39,15 +40,12 @@ class _MediHoraAppState extends State<MediHoraApp> {
     return MaterialApp(
       title: 'MediHora',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        brightness: Brightness.light,
-      ),
+      themeMode: _themeMode,
+      theme: ThemeData(primarySwatch: Colors.teal),
       darkTheme: ThemeData(
         primarySwatch: Colors.teal,
         brightness: Brightness.dark,
       ),
-      themeMode: _themeMode,
       home: MedicationPage(
         isDarkMode: _themeMode == ThemeMode.dark,
         toggleTheme: toggleTheme,
@@ -61,10 +59,10 @@ class MedicationPage extends StatefulWidget {
   final VoidCallback toggleTheme;
 
   const MedicationPage({
-    Key? key,
+    super.key,
     required this.isDarkMode,
     required this.toggleTheme,
-  }) : super(key: key);
+  });
 
   @override
   State<MedicationPage> createState() => _MedicationPageState();
@@ -81,7 +79,9 @@ class _MedicationPageState extends State<MedicationPage> {
   Set<int> selectedDays = {};
   bool permanente = true;
 
-  final List<String> daysLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  Medicamento? medEmEdicao;
+
+  final daysLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
   @override
   void initState() {
@@ -91,73 +91,202 @@ class _MedicationPageState extends State<MedicationPage> {
 
   Future<void> loadMeds() async {
     final all = await isar.medicamentos.where().findAll();
-    setState(() {
-      meds = all;
-    });
+    setState(() => meds = all);
+  }
+
+  void limparFormulario() {
+    mediController.clear();
+    hourController.clear();
+    utenteController.clear();
+    selectedDays.clear();
+    selectedDateRange = null;
+    permanente = true;
+    medEmEdicao = null;
   }
 
   void pickDateRange() async {
-    final now = DateTime.now();
     final range = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 5),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
     if (range != null) {
-      setState(() {
-        selectedDateRange = range;
-      });
+      setState(() => selectedDateRange = range);
     }
   }
 
-  Future<void> addMed() async {
-    final medicamento = mediController.text.trim();
-    final hora = hourController.text.trim();
-    final utente = utenteController.text.trim();
-
-    if (medicamento.isEmpty ||
-        hora.isEmpty ||
-        utente.isEmpty ||
+  Future<void> guardarMedicamento() async {
+    if (mediController.text.isEmpty ||
+        hourController.text.isEmpty ||
+        utenteController.text.isEmpty ||
         selectedDays.isEmpty ||
         (!permanente && selectedDateRange == null)) {
       showDialog(
         context: context,
         builder: (_) => const AlertDialog(
           title: Text('Aviso'),
-          content: Text(
-            'Preencha todos os campos obrigatórios.\n'
-            'Medicamentos não permanentes precisam de período.',
-          ),
+          content: Text('Preenche todos os campos obrigatórios.'),
         ),
       );
       return;
     }
 
     final novoMed = Medicamento(
-      medicamento: medicamento,
-      hora: hora,
-      utente: utente,
+      medicamento: mediController.text.trim(),
+      hora: hourController.text.trim(),
+      utente: utenteController.text.trim(),
       permanente: permanente,
       dataInicio: permanente ? null : selectedDateRange!.start,
       dataFim: permanente ? null : selectedDateRange!.end,
       diasSemana: selectedDays.toList(),
     );
 
+    if (medEmEdicao != null) {
+      novoMed.id = medEmEdicao!.id; // mantém ID → edição
+    }
+
     await isar.writeTxn(() async {
       await isar.medicamentos.put(novoMed);
     });
 
-    mediController.clear();
-    hourController.clear();
-    utenteController.clear();
-    selectedDateRange = null;
-    selectedDays.clear();
-    permanente = true;
-
+    limparFormulario();
     await loadMeds();
   }
 
-  Future<void> removeMed(Medicamento med) async {
+  void editarMedicamento(Medicamento med) {
+    final editUtenteController = TextEditingController(text: med.utente);
+    final editMedicamentoController = TextEditingController(text: med.medicamento);
+    final editHoraController = TextEditingController(text: med.hora);
+    Set<int> editSelectedDays = med.diasSemana.toSet();
+    bool editPermanente = med.permanente;
+    DateTimeRange? editDateRange = !med.permanente
+        ? DateTimeRange(start: med.dataInicio!, end: med.dataFim!)
+        : null;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Editar Medicamento'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: editUtenteController,
+                      decoration: const InputDecoration(labelText: 'Utente'),
+                    ),
+                    TextField(
+                      controller: editMedicamentoController,
+                      decoration: const InputDecoration(labelText: 'Medicamento'),
+                    ),
+                    TextField(
+                      controller: editHoraController,
+                      decoration: const InputDecoration(labelText: 'Hora (08:00)'),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Medicamento permanente'),
+                      value: editPermanente,
+                      onChanged: (v) {
+                        setStateDialog(() {
+                          editPermanente = v;
+                          if (v) editDateRange = null;
+                        });
+                      },
+                    ),
+                    if (!editPermanente)
+                      TextButton(
+                        onPressed: () async {
+                          final range = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                            initialDateRange: editDateRange,
+                          );
+                          if (range != null) {
+                            setStateDialog(() => editDateRange = range);
+                          }
+                        },
+                        child: Text(
+                          editDateRange == null
+                              ? 'Selecionar período'
+                              : 'Período selecionado',
+                        ),
+                      ),
+                    Wrap(
+                      spacing: 6,
+                      children: List.generate(7, (i) {
+                        final d = i + 1;
+                        return FilterChip(
+                          label: Text(daysLabels[i]),
+                          selected: editSelectedDays.contains(d),
+                          onSelected: (v) {
+                            setStateDialog(() {
+                              v
+                                  ? editSelectedDays.add(d)
+                                  : editSelectedDays.remove(d);
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (editUtenteController.text.isEmpty ||
+                        editMedicamentoController.text.isEmpty ||
+                        editHoraController.text.isEmpty ||
+                        editSelectedDays.isEmpty ||
+                        (!editPermanente && editDateRange == null)) {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const AlertDialog(
+                          title: Text('Aviso'),
+                          content: Text('Preenche todos os campos obrigatórios.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final atualizadoMed = Medicamento(
+                      utente: editUtenteController.text.trim(),
+                      medicamento: editMedicamentoController.text.trim(),
+                      hora: editHoraController.text.trim(),
+                      permanente: editPermanente,
+                      dataInicio: editPermanente ? null : editDateRange!.start,
+                      dataFim: editPermanente ? null : editDateRange!.end,
+                      diasSemana: editSelectedDays.toList(),
+                    );
+
+                    atualizadoMed.id = med.id;
+
+                    await isar.writeTxn(() async {
+                      await isar.medicamentos.put(atualizadoMed);
+                    });
+
+                    await loadMeds();
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> removerMedicamento(Medicamento med) async {
     await isar.writeTxn(() async {
       await isar.medicamentos.delete(med.id);
     });
@@ -165,7 +294,7 @@ class _MedicationPageState extends State<MedicationPage> {
   }
 
   String formatDays(List<int> days) {
-    final sorted = List<int>.from(days)..sort();
+    final sorted = [...days]..sort();
     return sorted.map((d) => daysLabels[d - 1]).join(', ');
   }
 
@@ -185,138 +314,108 @@ class _MedicationPageState extends State<MedicationPage> {
         child: Column(
           children: [
             Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     TextField(
                       controller: utenteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome do Utente',
-                        prefixIcon: Icon(Icons.person),
-                      ),
+                      decoration:
+                          const InputDecoration(labelText: 'Utente'),
                     ),
-                    const SizedBox(height: 10),
                     TextField(
                       controller: mediController,
-                      decoration: const InputDecoration(
-                        labelText: 'Medicamento',
-                        prefixIcon: Icon(Icons.medication),
-                      ),
+                      decoration:
+                          const InputDecoration(labelText: 'Medicamento'),
                     ),
-                    const SizedBox(height: 10),
                     TextField(
                       controller: hourController,
-                      decoration: const InputDecoration(
-                        labelText: 'Hora (ex: 08:00)',
-                        prefixIcon: Icon(Icons.access_time),
-                      ),
+                      decoration:
+                          const InputDecoration(labelText: 'Hora (08:00)'),
                     ),
-                    const SizedBox(height: 10),
-
                     SwitchListTile(
                       title: const Text('Medicamento permanente'),
-                      subtitle:
-                          const Text('Não necessita de período de datas'),
                       value: permanente,
-                      onChanged: (value) {
+                      onChanged: (v) {
                         setState(() {
-                          permanente = value;
-                          if (permanente) {
-                            selectedDateRange = null;
-                          }
+                          permanente = v;
+                          if (v) selectedDateRange = null;
                         });
                       },
                     ),
-
                     if (!permanente)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              selectedDateRange == null
-                                  ? 'Nenhum período selecionado'
-                                  : 'De ${selectedDateRange!.start.day}/${selectedDateRange!.start.month}/${selectedDateRange!.start.year} '
-                                    'até ${selectedDateRange!.end.day}/${selectedDateRange!.end.month}/${selectedDateRange!.end.year}',
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: pickDateRange,
-                            child: const Text('Selecionar período'),
-                          ),
-                        ],
+                      TextButton(
+                        onPressed: pickDateRange,
+                        child: Text(
+                          selectedDateRange == null
+                              ? 'Selecionar período'
+                              : 'Período selecionado',
+                        ),
                       ),
-
-                    const SizedBox(height: 10),
                     Wrap(
                       spacing: 6,
-                      children: List.generate(7, (index) {
-                        final day = index + 1;
+                      children: List.generate(7, (i) {
+                        final d = i + 1;
                         return FilterChip(
-                          label: Text(daysLabels[index]),
-                          selected: selectedDays.contains(day),
+                          label: Text(daysLabels[i]),
+                          selected: selectedDays.contains(d),
                           onSelected: (v) {
                             setState(() {
                               v
-                                  ? selectedDays.add(day)
-                                  : selectedDays.remove(day);
+                                  ? selectedDays.add(d)
+                                  : selectedDays.remove(d);
                             });
                           },
                         );
                       }),
                     ),
-
                     const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: addMed,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Adicionar Medicação'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 45),
+                    ElevatedButton(
+                      onPressed: guardarMedicamento,
+                      child: Text(
+                        medEmEdicao == null
+                            ? 'Adicionar'
+                            : 'Guardar alterações',
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            meds.isEmpty
-                ? const Text('Nenhuma medicação registada')
-                : ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: meds.length,
-                    itemBuilder: (_, i) {
-                      final med = meds[i];
-                      return Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.medication),
-                          title: Text('${med.medicamento} • ${med.hora}'),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Utente: ${med.utente}'),
-                              Text(
-                                med.permanente
-                                    ? 'Medicamento permanente'
-                                    : 'De ${med.dataInicio!.day}/${med.dataInicio!.month}/${med.dataInicio!.year} '
-                                      'até ${med.dataFim!.day}/${med.dataFim!.month}/${med.dataFim!.year}',
-                              ),
-                              Text('Dias: ${formatDays(med.diasSemana)}'),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => removeMed(med),
-                          ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: meds.length,
+              itemBuilder: (_, i) {
+                final med = meds[i];
+                return Card(
+                  child: ListTile(
+                    // Utente aparece primeiro, e mostra período se não for permanente
+                    title: Text('${med.utente} • ${med.medicamento} • ${med.hora}'),
+                    subtitle: Text(
+                      med.permanente
+                          ? 'Permanente • ${formatDays(med.diasSemana)}'
+                          : 'De ${med.dataInicio!.day.toString().padLeft(2,'0')}/${med.dataInicio!.month.toString().padLeft(2,'0')} a ${med.dataFim!.day.toString().padLeft(2,'0')}/${med.dataFim!.month.toString().padLeft(2,'0')} • ${formatDays(med.diasSemana)}',
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => editarMedicamento(med),
                         ),
-                      );
-                    },
+                        IconButton(
+                          icon:
+                              const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => removerMedicamento(med),
+                        ),
+                      ],
+                    ),
                   ),
+                );
+              },
+            ),
           ],
         ),
       ),

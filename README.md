@@ -6,7 +6,7 @@ Este projeto foi desenvolvido no âmbito da PAP (Prova de Aptidão Profissional)
 
 ---
 
-## 🎯 Objetivo da Aplicaçãoâmbito da **PAP
+## 🎯 Objetivo da Aplicação âmbito da **PAP**
 
 A aplicação permite ao utilizador:
 - Registar medicamentos associados a um utente;

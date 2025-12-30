@@ -46,12 +46,15 @@ A aplicação permite ao utilizador:
 
 ## 📂 Estrutura do Projeto
 
+```text
 lib/
- ├── main.dart            # Entrada principal da aplicação
+ ├── main.dart                           # Entrada principal da aplicação
  ├── models/
- │    └── medicamento.dart # Modelo de dados Medicamento (com campos recorrente, permanente, período)
- ├── theme_drawer.dart     # Drawer com seleção de tema claro/escuro
- └── ...                  # Outros widgets e páginas
-pubspec.yaml             # Dependências e configuração do projeto
+ │    ├── medicamento.dart               # Modelo de dados Medicamento (com campos recorrente, permanente, período)
+ │    └── medicamento.g.dart             # Ficheiro gerado automaticamente pelo Isar para persistência local
+ ├── theme_drawer.dart                   # Drawer com seleção de tema claro/escuro
+ └── ...                                 # Outros widgets e páginas
+pubspec.yaml                             # Dependências e configuração do projeto
+README.md                                # Documentação do projeto
 
 

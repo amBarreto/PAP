@@ -11,6 +11,8 @@ class Medicamento {
   final String utente;
 
   final bool permanente;
+  final bool recorrente;        // indica se é recorrente
+  final int? intervaloHoras;    // intervalo em horas, se recorrente
 
   final DateTime? dataInicio;
   final DateTime? dataFim;
@@ -22,6 +24,8 @@ class Medicamento {
     required this.hora,
     required this.utente,
     required this.permanente,
+    this.recorrente = false,     // padrão a false
+    this.intervaloHoras,         // opcional
     this.dataInicio,
     this.dataFim,
     required this.diasSemana,

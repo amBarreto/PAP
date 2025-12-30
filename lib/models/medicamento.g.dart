@@ -37,18 +37,28 @@ const MedicamentoSchema = CollectionSchema(
       name: r'hora',
       type: IsarType.string,
     ),
-    r'medicamento': PropertySchema(
+    r'intervaloHoras': PropertySchema(
       id: 4,
+      name: r'intervaloHoras',
+      type: IsarType.long,
+    ),
+    r'medicamento': PropertySchema(
+      id: 5,
       name: r'medicamento',
       type: IsarType.string,
     ),
     r'permanente': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'permanente',
       type: IsarType.bool,
     ),
+    r'recorrente': PropertySchema(
+      id: 7,
+      name: r'recorrente',
+      type: IsarType.bool,
+    ),
     r'utente': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'utente',
       type: IsarType.string,
     )
@@ -90,9 +100,11 @@ void _medicamentoSerialize(
   writer.writeDateTime(offsets[1], object.dataInicio);
   writer.writeLongList(offsets[2], object.diasSemana);
   writer.writeString(offsets[3], object.hora);
-  writer.writeString(offsets[4], object.medicamento);
-  writer.writeBool(offsets[5], object.permanente);
-  writer.writeString(offsets[6], object.utente);
+  writer.writeLong(offsets[4], object.intervaloHoras);
+  writer.writeString(offsets[5], object.medicamento);
+  writer.writeBool(offsets[6], object.permanente);
+  writer.writeBool(offsets[7], object.recorrente);
+  writer.writeString(offsets[8], object.utente);
 }
 
 Medicamento _medicamentoDeserialize(
@@ -106,9 +118,11 @@ Medicamento _medicamentoDeserialize(
     dataInicio: reader.readDateTimeOrNull(offsets[1]),
     diasSemana: reader.readLongList(offsets[2]) ?? [],
     hora: reader.readString(offsets[3]),
-    medicamento: reader.readString(offsets[4]),
-    permanente: reader.readBool(offsets[5]),
-    utente: reader.readString(offsets[6]),
+    intervaloHoras: reader.readLongOrNull(offsets[4]),
+    medicamento: reader.readString(offsets[5]),
+    permanente: reader.readBool(offsets[6]),
+    recorrente: reader.readBoolOrNull(offsets[7]) ?? false,
+    utente: reader.readString(offsets[8]),
   );
   object.id = id;
   return object;
@@ -130,10 +144,14 @@ P _medicamentoDeserializeProp<P>(
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 6:
+      return (reader.readBool(offset)) as P;
+    case 7:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 8:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -709,6 +727,80 @@ extension MedicamentoQueryFilter
   }
 
   QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      intervaloHorasIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'intervaloHoras',
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      intervaloHorasIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'intervaloHoras',
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      intervaloHorasEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'intervaloHoras',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      intervaloHorasGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'intervaloHoras',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      intervaloHorasLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'intervaloHoras',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      intervaloHorasBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'intervaloHoras',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
       medicamentoEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -849,6 +941,16 @@ extension MedicamentoQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'permanente',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      recorrenteEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'recorrente',
         value: value,
       ));
     });
@@ -1033,6 +1135,19 @@ extension MedicamentoQuerySortBy
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByIntervaloHoras() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intervaloHoras', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy>
+      sortByIntervaloHorasDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intervaloHoras', Sort.desc);
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByMedicamento() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'medicamento', Sort.asc);
@@ -1054,6 +1169,18 @@ extension MedicamentoQuerySortBy
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByPermanenteDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'permanente', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByRecorrente() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recorrente', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByRecorrenteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recorrente', Sort.desc);
     });
   }
 
@@ -1120,6 +1247,19 @@ extension MedicamentoQuerySortThenBy
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByIntervaloHoras() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intervaloHoras', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy>
+      thenByIntervaloHorasDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intervaloHoras', Sort.desc);
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByMedicamento() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'medicamento', Sort.asc);
@@ -1141,6 +1281,18 @@ extension MedicamentoQuerySortThenBy
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByPermanenteDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'permanente', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByRecorrente() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recorrente', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByRecorrenteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recorrente', Sort.desc);
     });
   }
 
@@ -1184,6 +1336,12 @@ extension MedicamentoQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByIntervaloHoras() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'intervaloHoras');
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByMedicamento(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1194,6 +1352,12 @@ extension MedicamentoQueryWhereDistinct
   QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByPermanente() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'permanente');
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByRecorrente() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'recorrente');
     });
   }
 
@@ -1237,6 +1401,12 @@ extension MedicamentoQueryProperty
     });
   }
 
+  QueryBuilder<Medicamento, int?, QQueryOperations> intervaloHorasProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'intervaloHoras');
+    });
+  }
+
   QueryBuilder<Medicamento, String, QQueryOperations> medicamentoProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'medicamento');
@@ -1246,6 +1416,12 @@ extension MedicamentoQueryProperty
   QueryBuilder<Medicamento, bool, QQueryOperations> permanenteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'permanente');
+    });
+  }
+
+  QueryBuilder<Medicamento, bool, QQueryOperations> recorrenteProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'recorrente');
     });
   }
 

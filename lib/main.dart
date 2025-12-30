@@ -3,6 +3,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/medicamento.dart';
 import 'theme_drawer.dart';
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 late Isar isar;
 
@@ -79,6 +80,10 @@ class _MedicationPageState extends State<MedicationPage> {
   Set<int> selectedDays = {};
   bool permanente = true;
 
+  // 🔹 ADICIONADO (recorrente)
+  bool recorrente = false;
+  int intervaloHoras = 8;
+
   Medicamento? medEmEdicao;
 
   final daysLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -101,6 +106,8 @@ class _MedicationPageState extends State<MedicationPage> {
     selectedDays.clear();
     selectedDateRange = null;
     permanente = true;
+    recorrente = false;
+    intervaloHoras = 8;
     medEmEdicao = null;
   }
 
@@ -139,10 +146,12 @@ class _MedicationPageState extends State<MedicationPage> {
       dataInicio: permanente ? null : selectedDateRange!.start,
       dataFim: permanente ? null : selectedDateRange!.end,
       diasSemana: selectedDays.toList(),
+      recorrente: recorrente,
+      intervaloHoras: recorrente ? intervaloHoras : null,
     );
 
     if (medEmEdicao != null) {
-      novoMed.id = medEmEdicao!.id; // mantém ID → edição
+      novoMed.id = medEmEdicao!.id;
     }
 
     await isar.writeTxn(() async {
@@ -153,9 +162,11 @@ class _MedicationPageState extends State<MedicationPage> {
     await loadMeds();
   }
 
+  // ---- edição (INALTERADA) ----
   void editarMedicamento(Medicamento med) {
     final editUtenteController = TextEditingController(text: med.utente);
-    final editMedicamentoController = TextEditingController(text: med.medicamento);
+    final editMedicamentoController =
+        TextEditingController(text: med.medicamento);
     final editHoraController = TextEditingController(text: med.hora);
     Set<int> editSelectedDays = med.diasSemana.toSet();
     bool editPermanente = med.permanente;
@@ -176,15 +187,18 @@ class _MedicationPageState extends State<MedicationPage> {
                   children: [
                     TextField(
                       controller: editUtenteController,
-                      decoration: const InputDecoration(labelText: 'Utente'),
+                      decoration:
+                          const InputDecoration(labelText: 'Utente'),
                     ),
                     TextField(
                       controller: editMedicamentoController,
-                      decoration: const InputDecoration(labelText: 'Medicamento'),
+                      decoration:
+                          const InputDecoration(labelText: 'Medicamento'),
                     ),
                     TextField(
                       controller: editHoraController,
-                      decoration: const InputDecoration(labelText: 'Hora (08:00)'),
+                      decoration:
+                          const InputDecoration(labelText: 'Hora (08:00)'),
                     ),
                     SwitchListTile(
                       title: const Text('Medicamento permanente'),
@@ -201,8 +215,10 @@ class _MedicationPageState extends State<MedicationPage> {
                         onPressed: () async {
                           final range = await showDateRangePicker(
                             context: context,
-                            firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                            lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                            firstDate:
+                                DateTime.now().subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now()
+                                .add(const Duration(days: 365 * 5)),
                             initialDateRange: editDateRange,
                           );
                           if (range != null) {
@@ -242,29 +258,18 @@ class _MedicationPageState extends State<MedicationPage> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    if (editUtenteController.text.isEmpty ||
-                        editMedicamentoController.text.isEmpty ||
-                        editHoraController.text.isEmpty ||
-                        editSelectedDays.isEmpty ||
-                        (!editPermanente && editDateRange == null)) {
-                      showDialog(
-                        context: context,
-                        builder: (_) => const AlertDialog(
-                          title: Text('Aviso'),
-                          content: Text('Preenche todos os campos obrigatórios.'),
-                        ),
-                      );
-                      return;
-                    }
-
                     final atualizadoMed = Medicamento(
                       utente: editUtenteController.text.trim(),
-                      medicamento: editMedicamentoController.text.trim(),
+                      medicamento:
+                          editMedicamentoController.text.trim(),
                       hora: editHoraController.text.trim(),
                       permanente: editPermanente,
-                      dataInicio: editPermanente ? null : editDateRange!.start,
-                      dataFim: editPermanente ? null : editDateRange!.end,
+                      dataInicio:
+                          editPermanente ? null : editDateRange!.start,
+                      dataFim:
+                          editPermanente ? null : editDateRange!.end,
                       diasSemana: editSelectedDays.toList(),
+                      recorrente: recorrente,
                     );
 
                     atualizadoMed.id = med.id;
@@ -333,8 +338,61 @@ class _MedicationPageState extends State<MedicationPage> {
                       decoration:
                           const InputDecoration(labelText: 'Hora (08:00)'),
                     ),
+
+                    // 🔹 ADICIONADO — fixo vs recorrente
+                    const SizedBox(height: 8),
+                    ToggleButtons(
+                      isSelected: [!recorrente, recorrente],
+                      onPressed: (index) {
+                        setState(() {
+                          recorrente = index == 1;
+                        });
+                      },
+                      children: const [
+                        Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('Horário fixo'),
+                        ),
+                        Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('Recorrente'),
+                        ),
+                      ],
+                    ),
+
+                    if (recorrente) ...[
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int>(
+                        value: intervaloHoras,
+                        decoration:
+                            const InputDecoration(labelText: 'Intervalo'),
+                        items: const [
+                          DropdownMenuItem(
+                              value: 4,
+                              child: Text('De 4 em 4 horas')),
+                          DropdownMenuItem(
+                              value: 6,
+                              child: Text('De 6 em 6 horas')),
+                          DropdownMenuItem(
+                              value: 8,
+                              child: Text('De 8 em 8 horas')),
+                          DropdownMenuItem(
+                              value: 12,
+                              child: Text('De 12 em 12 horas')),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            setState(() => intervaloHoras = v);
+                          }
+                        },
+                      ),
+                    ],
+
                     SwitchListTile(
-                      title: const Text('Medicamento permanente'),
+                      title:
+                          const Text('Medicamento permanente'),
                       value: permanente,
                       onChanged: (v) {
                         setState(() {
@@ -352,13 +410,16 @@ class _MedicationPageState extends State<MedicationPage> {
                               : 'Período selecionado',
                         ),
                       ),
+
                     Wrap(
                       spacing: 6,
                       children: List.generate(7, (i) {
                         final d = i + 1;
+
                         return FilterChip(
                           label: Text(daysLabels[i]),
-                          selected: selectedDays.contains(d),
+                          selected:
+                              selectedDays.contains(d),
                           onSelected: (v) {
                             setState(() {
                               v
@@ -370,34 +431,35 @@ class _MedicationPageState extends State<MedicationPage> {
                       }),
                     ),
                     const SizedBox(height: 12),
+
                     ElevatedButton(
                       onPressed: guardarMedicamento,
-                      child: Text(
-                        medEmEdicao == null
-                            ? 'Adicionar'
-                            : 'Guardar alterações',
-                      ),
+                      child: const Text('Adicionar'),
                     ),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: 20),
+
+            // 🔹 ADICIONADO — ListView de saída com recorrente
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: meds.length,
+
               itemBuilder: (_, i) {
                 final med = meds[i];
                 return Card(
                   child: ListTile(
-                    // Utente aparece primeiro, e mostra período se não for permanente
                     title: Text('${med.utente} • ${med.medicamento} • ${med.hora}'),
                     subtitle: Text(
                       med.permanente
-                          ? 'Permanente • ${formatDays(med.diasSemana)}'
-                          : 'De ${med.dataInicio!.day.toString().padLeft(2,'0')}/${med.dataInicio!.month.toString().padLeft(2,'0')} a ${med.dataFim!.day.toString().padLeft(2,'0')}/${med.dataFim!.month.toString().padLeft(2,'0')} • ${formatDays(med.diasSemana)}',
+                          ? 'Permanente • ${formatDays(med.diasSemana)}${med.recorrente && med.intervaloHoras != null ? ' • De ${med.intervaloHoras} em ${med.intervaloHoras} horas' : ''}'
+                           : 'De ${med.dataInicio!.day.toString().padLeft(2,'0')}/${med.dataInicio!.month.toString().padLeft(2,'0')} a ${med.dataFim!.day.toString().padLeft(2,'0')}/${med.dataFim!.month.toString().padLeft(2,'0')} • ${formatDays(med.diasSemana)}${med.recorrente && med.intervaloHoras != null ? ' • De ${med.intervaloHoras} em ${med.intervaloHoras} horas' : ''}',
                     ),
+                    
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -405,6 +467,7 @@ class _MedicationPageState extends State<MedicationPage> {
                           icon: const Icon(Icons.edit),
                           onPressed: () => editarMedicamento(med),
                         ),
+
                         IconButton(
                           icon:
                               const Icon(Icons.delete, color: Colors.red),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/medicamento.dart';
-import 'theme_drawer.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'drawer.dart';
+//import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 late Isar isar;
 
@@ -310,7 +310,7 @@ class _MedicationPageState extends State<MedicationPage> {
         title: const Text('💊 MediHora'),
         centerTitle: true,
       ),
-      drawer: ThemeDrawer(
+      drawer: AppDrawer(
         isDarkMode: widget.isDarkMode,
         toggleTheme: widget.toggleTheme,
       ),

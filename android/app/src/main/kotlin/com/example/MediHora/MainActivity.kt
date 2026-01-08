@@ -1,4 +1,4 @@
-package com.example.helloword
+package com.example.MediHora
 
 import io.flutter.embedding.android.FlutterActivity
 

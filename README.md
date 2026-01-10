@@ -50,11 +50,12 @@ A aplicação permite ao utilizador:
 lib/
  ├── main.dart                           # Entrada principal da aplicação
  ├── models/
- │    ├── medicamento.dart               # Modelo de dados Medicamento (com campos recorrente, permanente, período)
+ │    ├── medicamento.dart               # Modelo de dados Medicamento (utente, medicamento, dosagem, hora, dias da semana, recorrente, permanente, período)
  │    └── medicamento.g.dart             # Ficheiro gerado automaticamente pelo Isar para persistência local
- ├── theme_drawer.dart                   # Drawer com seleção de tema claro/escuro
- └── ...                                 # Outros widgets e páginas
-pubspec.yaml                             # Dependências e configuração do projeto
-README.md                                # Documentação do projeto
+ ├── services/
+ │    └── notification_service.dart      # Serviço de notificações e alarmes (agendamento, cancelamento, permissões)
+ └── drawer.dart                         # Drawer com tema claro/escuro, ver alarmes agendados, linha de apoio SNS 24
 
+pubspec.yaml                             # Dependências (isar, flutter_local_notifications, timezone, permission_handler, path_provider)
+README.md                                # Documentação do projeto
 

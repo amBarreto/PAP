@@ -32,33 +32,38 @@ const MedicamentoSchema = CollectionSchema(
       name: r'diasSemana',
       type: IsarType.longList,
     ),
-    r'hora': PropertySchema(
+    r'dosagem': PropertySchema(
       id: 3,
+      name: r'dosagem',
+      type: IsarType.string,
+    ),
+    r'hora': PropertySchema(
+      id: 4,
       name: r'hora',
       type: IsarType.string,
     ),
     r'intervaloHoras': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'intervaloHoras',
       type: IsarType.long,
     ),
     r'medicamento': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'medicamento',
       type: IsarType.string,
     ),
     r'permanente': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'permanente',
       type: IsarType.bool,
     ),
     r'recorrente': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'recorrente',
       type: IsarType.bool,
     ),
     r'utente': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'utente',
       type: IsarType.string,
     )
@@ -84,6 +89,7 @@ int _medicamentoEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.diasSemana.length * 8;
+  bytesCount += 3 + object.dosagem.length * 3;
   bytesCount += 3 + object.hora.length * 3;
   bytesCount += 3 + object.medicamento.length * 3;
   bytesCount += 3 + object.utente.length * 3;
@@ -99,12 +105,13 @@ void _medicamentoSerialize(
   writer.writeDateTime(offsets[0], object.dataFim);
   writer.writeDateTime(offsets[1], object.dataInicio);
   writer.writeLongList(offsets[2], object.diasSemana);
-  writer.writeString(offsets[3], object.hora);
-  writer.writeLong(offsets[4], object.intervaloHoras);
-  writer.writeString(offsets[5], object.medicamento);
-  writer.writeBool(offsets[6], object.permanente);
-  writer.writeBool(offsets[7], object.recorrente);
-  writer.writeString(offsets[8], object.utente);
+  writer.writeString(offsets[3], object.dosagem);
+  writer.writeString(offsets[4], object.hora);
+  writer.writeLong(offsets[5], object.intervaloHoras);
+  writer.writeString(offsets[6], object.medicamento);
+  writer.writeBool(offsets[7], object.permanente);
+  writer.writeBool(offsets[8], object.recorrente);
+  writer.writeString(offsets[9], object.utente);
 }
 
 Medicamento _medicamentoDeserialize(
@@ -117,12 +124,13 @@ Medicamento _medicamentoDeserialize(
     dataFim: reader.readDateTimeOrNull(offsets[0]),
     dataInicio: reader.readDateTimeOrNull(offsets[1]),
     diasSemana: reader.readLongList(offsets[2]) ?? [],
-    hora: reader.readString(offsets[3]),
-    intervaloHoras: reader.readLongOrNull(offsets[4]),
-    medicamento: reader.readString(offsets[5]),
-    permanente: reader.readBool(offsets[6]),
-    recorrente: reader.readBoolOrNull(offsets[7]) ?? false,
-    utente: reader.readString(offsets[8]),
+    dosagem: reader.readString(offsets[3]),
+    hora: reader.readString(offsets[4]),
+    intervaloHoras: reader.readLongOrNull(offsets[5]),
+    medicamento: reader.readString(offsets[6]),
+    permanente: reader.readBool(offsets[7]),
+    recorrente: reader.readBoolOrNull(offsets[8]) ?? false,
+    utente: reader.readString(offsets[9]),
   );
   object.id = id;
   return object;
@@ -144,14 +152,16 @@ P _medicamentoDeserializeProp<P>(
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readLongOrNull(offset)) as P;
-    case 5:
       return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readLongOrNull(offset)) as P;
     case 6:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 7:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readBool(offset)) as P;
     case 8:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 9:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -539,6 +549,140 @@ extension MedicamentoQueryFilter
         upper,
         includeUpper,
       );
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dosagemEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dosagem',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dosagemGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'dosagem',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dosagemLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'dosagem',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dosagemBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'dosagem',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dosagemStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'dosagem',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dosagemEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'dosagem',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dosagemContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'dosagem',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition> dosagemMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'dosagem',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dosagemIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dosagem',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterFilterCondition>
+      dosagemIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'dosagem',
+        value: '',
+      ));
     });
   }
 
@@ -1123,6 +1267,18 @@ extension MedicamentoQuerySortBy
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByDosagem() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dosagem', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByDosagemDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dosagem', Sort.desc);
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> sortByHora() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hora', Sort.asc);
@@ -1220,6 +1376,18 @@ extension MedicamentoQuerySortThenBy
   QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByDataInicioDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dataInicio', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByDosagem() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dosagem', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Medicamento, Medicamento, QAfterSortBy> thenByDosagemDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dosagem', Sort.desc);
     });
   }
 
@@ -1329,6 +1497,13 @@ extension MedicamentoQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByDosagem(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'dosagem', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Medicamento, Medicamento, QDistinct> distinctByHora(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1392,6 +1567,12 @@ extension MedicamentoQueryProperty
   QueryBuilder<Medicamento, List<int>, QQueryOperations> diasSemanaProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'diasSemana');
+    });
+  }
+
+  QueryBuilder<Medicamento, String, QQueryOperations> dosagemProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'dosagem');
     });
   }
 

@@ -9,6 +9,7 @@ class Medicamento {
   final String medicamento;
   final String hora;
   final String utente;
+  final String dosagem;
 
   final bool permanente;
   final bool recorrente;        // indica se é recorrente
@@ -23,6 +24,7 @@ class Medicamento {
     required this.medicamento,
     required this.hora,
     required this.utente,
+    required this.dosagem,
     required this.permanente,
     this.recorrente = false,     // padrão a false
     this.intervaloHoras,         // opcional

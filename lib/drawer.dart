@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'services/notification_service.dart';
 
 class AppDrawer extends StatelessWidget {
   final bool isDarkMode;
@@ -9,6 +10,58 @@ class AppDrawer extends StatelessWidget {
     required this.isDarkMode,
     required this.toggleTheme,
   });
+
+  Future<void> _verAlarmes(BuildContext context) async {
+    final alarmes = await NotificationService().getPendingNotifications();
+    
+    if (!context.mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('📋 Alarmes Agendados'),
+        content: SingleChildScrollView(
+          child: alarmes.isEmpty
+              ? const Text(
+                  'Nenhum alarme agendado no momento.\n\n'
+                  'Adicione medicamentos na página principal para criar alarmes.',
+                  textAlign: TextAlign.center,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total: ${alarmes.length} alarme(s)',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    ...alarmes.map((a) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.alarm),
+                              title: Text(a.title ?? 'Sem título'),
+                              subtitle: Text(a.body ?? 'Sem descrição'),
+                              trailing: Text(
+                                'ID: ${a.id}',
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            ),
+                          ),
+                        )),
+                  ],
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +75,7 @@ class AppDrawer extends StatelessWidget {
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children:[
+              children: [
                 Icon(Icons.medication, color: Colors.white, size: 40),
                 SizedBox(height: 10),
                 Text(
@@ -51,6 +104,19 @@ class AppDrawer extends StatelessWidget {
 
           const Divider(),
 
+          /* ================= VER ALARMES ================= */
+          ListTile(
+            leading: const Icon(Icons.notifications_active),
+            title: const Text('Ver alarmes agendados'),
+            subtitle: const Text('Consultar notificações programadas'),
+            onTap: () {
+              Navigator.pop(context); // Fecha a drawer
+              _verAlarmes(context);
+            },
+          ),
+
+          const Divider(),
+
           /* ================= LINHA DE APOIO ================= */
           ListTile(
             leading: const Icon(Icons.phone),
@@ -59,7 +125,7 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               showDialog(
                 context: context,
-                builder: (_) => AlertDialog(
+                builder: (dialogContext) => AlertDialog(
                   title: const Text('Linha de apoio'),
                   content: const Text(
                     'Linha de Apoio SNS 24.\n\n'
@@ -67,7 +133,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   actions: [
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
                       child: const Text('Fechar'),
                     ),
                   ],
@@ -78,11 +144,41 @@ class AppDrawer extends StatelessWidget {
 
           const Divider(),
 
-          /* ================= SOBRE ================= */
+          /* ================= CONSULTAS ================= */
+
+          ListTile(
+            leading: const Icon(Icons.local_hospital),
+            title: const Text('Consultas médicas'),
+            subtitle: const Text('Agendar ou consultar consultas'),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Consultas médicas'),
+                  content: const Text(
+                    'Para agendar ou consultar consultas médicas, '
+                    'por favor utilize a aplicação oficial do SNS ou contacte o seu centro de saúde.',
+                  ),
+                  actions: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Fechar'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          const Divider(),
+
+          /* ================= SOBRE/INFORMAÇÃO ================= */
           const ListTile(
             leading: Icon(Icons.info_outline),
-            title: Text('Sobre'),
-            subtitle: Text('Versão académica / demonstrativa'),
+            title: Text('INFORMAÇÃO/SOBRE'),
+            subtitle: Text('Esta aplicação foi desenvolvida para fins académicos e de demonstração. '
+                'Não deve ser utilizada como substituto de aconselhamento médico profissional. '
+                'Consulte sempre um profissional de saúde qualificado para questões relacionadas com a sua saúde e medicação.'),
           ),
         ],
       ),

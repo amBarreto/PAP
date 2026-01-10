@@ -3,7 +3,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/medicamento.dart';
 import 'drawer.dart';
-//import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'services/notification_service.dart';
 
 late Isar isar;
 
@@ -15,6 +15,8 @@ void main() async {
     [MedicamentoSchema],
     directory: dir.path,
   );
+
+  await NotificationService().initialize();
 
   runApp(const MediHoraApp());
 }
@@ -75,12 +77,12 @@ class _MedicationPageState extends State<MedicationPage> {
   final mediController = TextEditingController();
   final hourController = TextEditingController();
   final utenteController = TextEditingController();
+  final dosagemController = TextEditingController();
 
   DateTimeRange? selectedDateRange;
   Set<int> selectedDays = {};
   bool permanente = true;
 
-  // 🔹 ADICIONADO (recorrente)
   bool recorrente = false;
   int intervaloHoras = 8;
 
@@ -103,6 +105,7 @@ class _MedicationPageState extends State<MedicationPage> {
     mediController.clear();
     hourController.clear();
     utenteController.clear();
+    dosagemController.clear();
     selectedDays.clear();
     selectedDateRange = null;
     permanente = true;
@@ -126,6 +129,7 @@ class _MedicationPageState extends State<MedicationPage> {
     if (mediController.text.isEmpty ||
         hourController.text.isEmpty ||
         utenteController.text.isEmpty ||
+        dosagemController.text.isEmpty ||
         selectedDays.isEmpty ||
         (!permanente && selectedDateRange == null)) {
       showDialog(
@@ -142,6 +146,7 @@ class _MedicationPageState extends State<MedicationPage> {
       medicamento: mediController.text.trim(),
       hora: hourController.text.trim(),
       utente: utenteController.text.trim(),
+      dosagem: dosagemController.text.trim(),
       permanente: permanente,
       dataInicio: permanente ? null : selectedDateRange!.start,
       dataFim: permanente ? null : selectedDateRange!.end,
@@ -158,18 +163,72 @@ class _MedicationPageState extends State<MedicationPage> {
       await isar.medicamentos.put(novoMed);
     });
 
+    await _agendarAlarmes(novoMed);
+
     limparFormulario();
     await loadMeds();
   }
 
-  // ---- edição (INALTERADA) ----
+  Future<void> _agendarAlarmes(Medicamento med) async {
+    final timeParts = med.hora.split(':');
+    if (timeParts.length != 2) return;
+
+    final hour = int.tryParse(timeParts[0]);
+    final minute = int.tryParse(timeParts[1]);
+    if (hour == null || minute == null) return;
+
+    if (med.recorrente && med.intervaloHoras != null) {
+      final now = DateTime.now();
+      var nextAlarm = DateTime(now.year, now.month, now.day, hour, minute);
+      
+      if (nextAlarm.isBefore(now)) {
+        nextAlarm = nextAlarm.add(const Duration(days: 1));
+      }
+
+      final numAlarmes = 24 ~/ med.intervaloHoras!;
+      
+      for (int i = 0; i < numAlarmes; i++) {
+        final alarmTime = nextAlarm.add(Duration(hours: med.intervaloHoras! * i));
+        
+        await NotificationService().scheduleNotification(
+          id: med.id * 100 + i,
+          title: '💊 Hora de tomar ${med.medicamento}!',
+          body: '${med.utente} • ${med.dosagem}',
+          scheduledTime: alarmTime,
+          payload: med.id.toString(),
+        );
+      }
+    } else {
+      for (final day in med.diasSemana) {
+        await NotificationService().scheduleDailyNotification(
+          id: med.id * 10 + day,
+          title: '💊 Hora de tomar ${med.medicamento}!',
+          body: '${med.utente} • ${med.dosagem}',
+          time: TimeOfDay(hour: hour, minute: minute),
+          payload: med.id.toString(),
+        );
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Alarmes agendados com sucesso!'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   void editarMedicamento(Medicamento med) {
     final editUtenteController = TextEditingController(text: med.utente);
-    final editMedicamentoController =
-        TextEditingController(text: med.medicamento);
+    final editMedicamentoController = TextEditingController(text: med.medicamento);
     final editHoraController = TextEditingController(text: med.hora);
+    final editDosagemController = TextEditingController(text: med.dosagem);
     Set<int> editSelectedDays = med.diasSemana.toSet();
     bool editPermanente = med.permanente;
+    bool editRecorrente = med.recorrente;
+    int editIntervaloHoras = med.intervaloHoras ?? 8;
     DateTimeRange? editDateRange = !med.permanente
         ? DateTimeRange(start: med.dataInicio!, end: med.dataFim!)
         : null;
@@ -187,19 +246,60 @@ class _MedicationPageState extends State<MedicationPage> {
                   children: [
                     TextField(
                       controller: editUtenteController,
-                      decoration:
-                          const InputDecoration(labelText: 'Utente'),
+                      decoration: const InputDecoration(labelText: 'Utente'),
                     ),
                     TextField(
                       controller: editMedicamentoController,
-                      decoration:
-                          const InputDecoration(labelText: 'Medicamento'),
+                      decoration: const InputDecoration(labelText: 'Medicamento'),
+                    ),
+                    TextField(
+                      controller: editDosagemController,
+                      decoration: const InputDecoration(labelText: 'Dosagem'),
                     ),
                     TextField(
                       controller: editHoraController,
-                      decoration:
-                          const InputDecoration(labelText: 'Hora (08:00)'),
+                      decoration: const InputDecoration(labelText: 'Hora (08:00)'),
                     ),
+                    
+                    const SizedBox(height: 8),
+                    ToggleButtons(
+                      isSelected: [!editRecorrente, editRecorrente],
+                      onPressed: (index) {
+                        setStateDialog(() {
+                          editRecorrente = index == 1;
+                        });
+                      },
+                      children: const [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('Horário fixo'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('Recorrente'),
+                        ),
+                      ],
+                    ),
+
+                    if (editRecorrente) ...[
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int>(
+                        value: editIntervaloHoras,
+                        decoration: const InputDecoration(labelText: 'Intervalo'),
+                        items: const [
+                          DropdownMenuItem(value: 4, child: Text('De 4 em 4 horas')),
+                          DropdownMenuItem(value: 6, child: Text('De 6 em 6 horas')),
+                          DropdownMenuItem(value: 8, child: Text('De 8 em 8 horas')),
+                          DropdownMenuItem(value: 12, child: Text('De 12 em 12 horas')),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            setStateDialog(() => editIntervaloHoras = v);
+                          }
+                        },
+                      ),
+                    ],
+                    
                     SwitchListTile(
                       title: const Text('Medicamento permanente'),
                       value: editPermanente,
@@ -215,10 +315,8 @@ class _MedicationPageState extends State<MedicationPage> {
                         onPressed: () async {
                           final range = await showDateRangePicker(
                             context: context,
-                            firstDate:
-                                DateTime.now().subtract(const Duration(days: 365)),
-                            lastDate: DateTime.now()
-                                .add(const Duration(days: 365 * 5)),
+                            firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
                             initialDateRange: editDateRange,
                           );
                           if (range != null) {
@@ -260,16 +358,15 @@ class _MedicationPageState extends State<MedicationPage> {
                   onPressed: () async {
                     final atualizadoMed = Medicamento(
                       utente: editUtenteController.text.trim(),
-                      medicamento:
-                          editMedicamentoController.text.trim(),
+                      medicamento: editMedicamentoController.text.trim(),
                       hora: editHoraController.text.trim(),
+                      dosagem: editDosagemController.text.trim(),
                       permanente: editPermanente,
-                      dataInicio:
-                          editPermanente ? null : editDateRange!.start,
-                      dataFim:
-                          editPermanente ? null : editDateRange!.end,
+                      dataInicio: editPermanente ? null : editDateRange!.start,
+                      dataFim: editPermanente ? null : editDateRange!.end,
                       diasSemana: editSelectedDays.toList(),
-                      recorrente: recorrente,
+                      recorrente: editRecorrente,
+                      intervaloHoras: editRecorrente ? editIntervaloHoras : null,
                     );
 
                     atualizadoMed.id = med.id;
@@ -279,7 +376,9 @@ class _MedicationPageState extends State<MedicationPage> {
                     });
 
                     await loadMeds();
-                    Navigator.of(context).pop();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
                   },
                   child: const Text('Guardar'),
                 ),
@@ -292,10 +391,31 @@ class _MedicationPageState extends State<MedicationPage> {
   }
 
   Future<void> removerMedicamento(Medicamento med) async {
+    if (med.recorrente && med.intervaloHoras != null) {
+      final numAlarmes = 24 ~/ med.intervaloHoras!;
+      for (int i = 0; i < numAlarmes; i++) {
+        await NotificationService().cancelNotification(med.id * 100 + i);
+      }
+    } else {
+      for (final day in med.diasSemana) {
+        await NotificationService().cancelNotification(med.id * 10 + day);
+      }
+    }
+
     await isar.writeTxn(() async {
       await isar.medicamentos.delete(med.id);
     });
+    
     await loadMeds();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('❌ Medicamento e alarmes removidos'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   String formatDays(List<int> days) {
@@ -325,21 +445,24 @@ class _MedicationPageState extends State<MedicationPage> {
                   children: [
                     TextField(
                       controller: utenteController,
-                      decoration:
-                          const InputDecoration(labelText: 'Utente'),
+                      decoration: const InputDecoration(labelText: 'Utente'),
                     ),
                     TextField(
                       controller: mediController,
-                      decoration:
-                          const InputDecoration(labelText: 'Medicamento'),
+                      decoration: const InputDecoration(labelText: 'Medicamento'),
+                    ),
+                    TextField(
+                      controller: dosagemController,
+                      decoration: const InputDecoration(
+                        labelText: 'Dosagem',
+                        hintText: 'Ex: 500mg, 10ml, 1 comprimido',
+                      ),
                     ),
                     TextField(
                       controller: hourController,
-                      decoration:
-                          const InputDecoration(labelText: 'Hora (08:00)'),
+                      decoration: const InputDecoration(labelText: 'Hora (08:00)'),
                     ),
 
-                    // 🔹 ADICIONADO — fixo vs recorrente
                     const SizedBox(height: 8),
                     ToggleButtons(
                       isSelected: [!recorrente, recorrente],
@@ -350,13 +473,11 @@ class _MedicationPageState extends State<MedicationPage> {
                       },
                       children: const [
                         Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 12),
+                          padding: EdgeInsets.symmetric(horizontal: 12),
                           child: Text('Horário fixo'),
                         ),
                         Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 12),
+                          padding: EdgeInsets.symmetric(horizontal: 12),
                           child: Text('Recorrente'),
                         ),
                       ],
@@ -366,21 +487,12 @@ class _MedicationPageState extends State<MedicationPage> {
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
                         value: intervaloHoras,
-                        decoration:
-                            const InputDecoration(labelText: 'Intervalo'),
+                        decoration: const InputDecoration(labelText: 'Intervalo'),
                         items: const [
-                          DropdownMenuItem(
-                              value: 4,
-                              child: Text('De 4 em 4 horas')),
-                          DropdownMenuItem(
-                              value: 6,
-                              child: Text('De 6 em 6 horas')),
-                          DropdownMenuItem(
-                              value: 8,
-                              child: Text('De 8 em 8 horas')),
-                          DropdownMenuItem(
-                              value: 12,
-                              child: Text('De 12 em 12 horas')),
+                          DropdownMenuItem(value: 4, child: Text('De 4 em 4 horas')),
+                          DropdownMenuItem(value: 6, child: Text('De 6 em 6 horas')),
+                          DropdownMenuItem(value: 8, child: Text('De 8 em 8 horas')),
+                          DropdownMenuItem(value: 12, child: Text('De 12 em 12 horas')),
                         ],
                         onChanged: (v) {
                           if (v != null) {
@@ -391,8 +503,7 @@ class _MedicationPageState extends State<MedicationPage> {
                     ],
 
                     SwitchListTile(
-                      title:
-                          const Text('Medicamento permanente'),
+                      title: const Text('Medicamento permanente'),
                       value: permanente,
                       onChanged: (v) {
                         setState(() {
@@ -415,16 +526,12 @@ class _MedicationPageState extends State<MedicationPage> {
                       spacing: 6,
                       children: List.generate(7, (i) {
                         final d = i + 1;
-
                         return FilterChip(
                           label: Text(daysLabels[i]),
-                          selected:
-                              selectedDays.contains(d),
+                          selected: selectedDays.contains(d),
                           onSelected: (v) {
                             setState(() {
-                              v
-                                  ? selectedDays.add(d)
-                                  : selectedDays.remove(d);
+                              v ? selectedDays.add(d) : selectedDays.remove(d);
                             });
                           },
                         );
@@ -443,23 +550,18 @@ class _MedicationPageState extends State<MedicationPage> {
 
             const SizedBox(height: 20),
 
-            // 🔹 ADICIONADO — ListView de saída com recorrente
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: meds.length,
-
               itemBuilder: (_, i) {
                 final med = meds[i];
                 return Card(
                   child: ListTile(
-                    title: Text('${med.utente} • ${med.medicamento} • ${med.hora}'),
+                    title: Text('${med.utente} • ${med.medicamento} • ${med.dosagem}'),
                     subtitle: Text(
-                      med.permanente
-                          ? 'Permanente • ${formatDays(med.diasSemana)}${med.recorrente && med.intervaloHoras != null ? ' • De ${med.intervaloHoras} em ${med.intervaloHoras} horas' : ''}'
-                           : 'De ${med.dataInicio!.day.toString().padLeft(2,'0')}/${med.dataInicio!.month.toString().padLeft(2,'0')} a ${med.dataFim!.day.toString().padLeft(2,'0')}/${med.dataFim!.month.toString().padLeft(2,'0')} • ${formatDays(med.diasSemana)}${med.recorrente && med.intervaloHoras != null ? ' • De ${med.intervaloHoras} em ${med.intervaloHoras} horas' : ''}',
+                      '${med.hora} • ${med.permanente ? 'Permanente' : 'De ${med.dataInicio!.day.toString().padLeft(2, '0')}/${med.dataInicio!.month.toString().padLeft(2, '0')} a ${med.dataFim!.day.toString().padLeft(2, '0')}/${med.dataFim!.month.toString().padLeft(2, '0')}'} • ${formatDays(med.diasSemana)}${med.recorrente && med.intervaloHoras != null ? ' • De ${med.intervaloHoras} em ${med.intervaloHoras} horas' : ''}',
                     ),
-                    
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -467,10 +569,8 @@ class _MedicationPageState extends State<MedicationPage> {
                           icon: const Icon(Icons.edit),
                           onPressed: () => editarMedicamento(med),
                         ),
-
                         IconButton(
-                          icon:
-                              const Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => removerMedicamento(med),
                         ),
                       ],

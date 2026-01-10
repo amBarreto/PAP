@@ -23,7 +23,7 @@ A aplicação permite ao utilizador:
 - 📋 Registo de medicação;
 - 👤 Associação a um utente;
 - ⏰ Definição da hora da toma;
-- ⏰ Alarmes *(em desenvolvimento, incluindo recorrência)*;
+- ⏰ Alarmes 
 - 📅 Seleção de dias da semana;
 - ♾️ Opção de medicação permanente (sem período);
 - 📆 Medicação temporária com período definido;
@@ -39,7 +39,7 @@ A aplicação permite ao utilizador:
 - **Flutter**
 - **Dart**
 - **Material Design**
-- **ISAR Database** – persistência local *(em fase de testes)*
+- **ISAR Database** – persistência local 
 - **Git & GitHub** - para controlo de versões
 
 ---

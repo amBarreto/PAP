@@ -144,34 +144,6 @@ class AppDrawer extends StatelessWidget {
 
           const Divider(),
 
-          /* ================= CONSULTAS ================= */
-
-          ListTile(
-            leading: const Icon(Icons.local_hospital),
-            title: const Text('Consultas médicas'),
-            subtitle: const Text('Agendar ou consultar consultas'),
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: const Text('Consultas médicas'),
-                  content: const Text(
-                    'Para agendar ou consultar consultas médicas, '
-                    'por favor utilize a aplicação oficial do SNS ou contacte o seu centro de saúde.',
-                  ),
-                  actions: [
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('Fechar'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-
-          const Divider(),
-
           /* ================= SOBRE/INFORMAÇÃO ================= */
           const ListTile(
             leading: Icon(Icons.info_outline),

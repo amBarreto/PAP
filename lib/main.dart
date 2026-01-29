@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/medicamento.dart';
+import 'models/consultas.dart';
 import 'drawer.dart';
 import 'services/notification_service.dart';
+import 'widgets/numpad.dart';
+import 'home_page.dart';
 
 late Isar isar;
 
@@ -12,7 +15,7 @@ void main() async {
 
   final dir = await getApplicationDocumentsDirectory();
   isar = await Isar.open(
-    [MedicamentoSchema],
+    [MedicamentoSchema, ConsultaSchema],
     directory: dir.path,
   );
 
@@ -49,7 +52,7 @@ class _MediHoraAppState extends State<MediHoraApp> {
         primarySwatch: Colors.teal,
         brightness: Brightness.dark,
       ),
-      home: MedicationPage(
+      home: HomePage(
         isDarkMode: _themeMode == ThemeMode.dark,
         toggleTheme: toggleTheme,
       ),
@@ -60,11 +63,13 @@ class _MediHoraAppState extends State<MediHoraApp> {
 class MedicationPage extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
+  final bool showAppBar;
 
   const MedicationPage({
     super.key,
     required this.isDarkMode,
     required this.toggleTheme,
+    this.showAppBar = true,
   });
 
   @override
@@ -256,9 +261,38 @@ class _MedicationPageState extends State<MedicationPage> {
                       controller: editDosagemController,
                       decoration: const InputDecoration(labelText: 'Dosagem'),
                     ),
-                    TextField(
-                      controller: editHoraController,
-                      decoration: const InputDecoration(labelText: 'Hora (08:00)'),
+                    
+                    // 🔹 NUMPAD PARA EDITAR HORA
+                    const SizedBox(height: 10),
+                    ListTile(
+                      leading: const Icon(Icons.access_time),
+                      title: Text(
+                        editHoraController.text.isEmpty 
+                          ? 'Selecionar hora' 
+                          : editHoraController.text,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: editHoraController.text.isEmpty ? Colors.grey : Colors.black,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.keyboard),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => TimeNumpad(
+                            initialTime: editHoraController.text,
+                            onTimeSelected: (time) {
+                              setStateDialog(() {
+                                editHoraController.text = time;
+                              });
+                            },
+                          ),
+                        );
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Colors.grey),
+                      ),
                     ),
                     
                     const SizedBox(height: 8),
@@ -426,14 +460,18 @@ class _MedicationPageState extends State<MedicationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: widget.showAppBar
+          ? AppBar(
         title: const Text('💊 MediHora'),
         centerTitle: true,
-      ),
-      drawer: AppDrawer(
+      )
+          : null, // permite ocultar a AppBar se necessário
+      drawer: widget.showAppBar
+      ? AppDrawer(
         isDarkMode: widget.isDarkMode,
         toggleTheme: widget.toggleTheme,
-      ),
+      )
+      : null, // permite ocultar o drawer se a AppBar estiver oculta
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -458,9 +496,40 @@ class _MedicationPageState extends State<MedicationPage> {
                         hintText: 'Ex: 500mg, 10ml, 1 comprimido',
                       ),
                     ),
-                    TextField(
-                      controller: hourController,
-                      decoration: const InputDecoration(labelText: 'Hora (08:00)'),
+                    
+                    // 🔹 NUMPAD PARA ADICIONAR HORA
+                    const SizedBox(height: 10),
+                    ListTile(
+                      leading: const Icon(Icons.access_time),
+                      title: Text(
+                        hourController.text.isEmpty 
+                          ? 'Selecionar hora' 
+                          : hourController.text,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: hourController.text.isEmpty
+                          ? Colors.grey
+                          : (widget.isDarkMode ? Colors.white : Colors.black),   
+                        ),
+                      ),
+                      trailing: const Icon(Icons.keyboard),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => TimeNumpad(
+                            initialTime: hourController.text,
+                            onTimeSelected: (time) {
+                              setState(() {
+                                hourController.text = time;
+                              });
+                            },
+                          ),
+                        );
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Colors.grey),
+                      ),
                     ),
 
                     const SizedBox(height: 8),

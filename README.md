@@ -52,6 +52,8 @@ A aplicação permite ao utilizador:
 ---
 
 ## Arquitetura da App
+
+````
 ┌─────────────────┐
 │  Flutter App    │ ← Interface (Android/iOS)
 │  (Frontend)     │

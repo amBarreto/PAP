@@ -76,6 +76,7 @@ A aplicação permite ao utilizador:
 │  Google Gemini  │ ← IA (respostas de saúde)
 │  API            │
 └─────────────────┘
+````
 
 ## 📂 Estrutura do Projeto
 
@@ -119,5 +120,5 @@ MediHora/
 ├── pubspec.yaml                                # Dependências Flutter
 ├── .gitignore                                  # Ignora arquivos gerados e sensíveis
 └── README.md                                   # Documentação do projeto
-
+````
 

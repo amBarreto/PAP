@@ -51,6 +51,30 @@ A aplicação permite ao utilizador:
 - **Autenticação:** API Key (variável de ambiente)
 ---
 
+## Arquitetura da App
+┌─────────────────┐
+│  Flutter App    │ ← Interface (Android/iOS)
+│  (Frontend)     │
+└────────┬────────┘
+         │ HTTP POST/GET
+         ↓
+┌─────────────────┐
+│  Render         │ ← Servidor (24/7 online)
+│  (Hosting)      │
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│  main.py        │ ← Backend Python (FastAPI)
+│  (API)          │
+└────────┬────────┘
+         │ API Call
+         ↓
+┌─────────────────┐
+│  Google Gemini  │ ← IA (respostas de saúde)
+│  API            │
+└─────────────────┘
+
 ## 📂 Estrutura do Projeto
 
 ```text

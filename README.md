@@ -49,34 +49,16 @@ A aplicação permite ao utilizador:
 - **IA:** Google Gemini 2.5 Flash
 - **Deploy:** Render (plano Free)
 - **Autenticação:** API Key (variável de ambiente)
----
 
-## Arquitetura da App
+## 🔁Fluxo de Dados
 
-````
-┌─────────────────┐
-│  Flutter App    │ ← Interface (Android/iOS)
-│  (Frontend)     │
-└────────┬────────┘
-         │ HTTP POST/GET
-         ↓
-┌─────────────────┐
-│  Render         │ ← Servidor (24/7 online)
-│  (Hosting)      │
-└────────┬────────┘
-         │
-         ↓
-┌─────────────────┐
-│  main.py        │ ← Backend Python (FastAPI)
-│  (API)          │
-└────────┬────────┘
-         │ API Call
-         ↓
-┌─────────────────┐
-│  Google Gemini  │ ← IA (respostas de saúde)
-│  API            │
-└─────────────────┘
-````
+```text
+Medicamentos/Consultas:
+User → Flutter UI → Isar (local) → Notificações (alarmes)
+
+Chat IA:
+User → Flutter → HTTP → Render → main.py → Gemini → resposta
+```
 
 ## 📂 Estrutura do Projeto
 
@@ -120,5 +102,5 @@ MediHora/
 ├── pubspec.yaml                                # Dependências Flutter
 ├── .gitignore                                  # Ignora arquivos gerados e sensíveis
 └── README.md                                   # Documentação do projeto
-````
+```
 

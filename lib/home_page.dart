@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'main.dart';
 import 'pages/consultas_page.dart';
+import 'pages/chat_ai_page.dart';
 import 'drawer.dart';
 
 class HomePage extends StatefulWidget {
@@ -20,18 +21,20 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
+  int _currentIndex = 1; // Inicia em Medicamentos
 
   @override
   Widget build(BuildContext context) {
     // Lista de páginas
     final pages = [
+      const ConsultasPage(showAppBar: false),  // Não mostra AppBar própria
+
       MedicationPage(
         isDarkMode: widget.isDarkMode,
         toggleTheme: widget.toggleTheme,
         showAppBar: false,  // Não mostra AppBar própria
       ),
-      const ConsultasPage(showAppBar: false),  // Não mostra AppBar própria
+      const ChatIAPage(showAppBar: false),  // Não mostra AppBar própria
     ];
 
     return Scaffold(
@@ -53,12 +56,16 @@ class _HomePageState extends State<HomePage> {
         },
         items: const [
           BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month),
+            label: 'Consultas',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.medication),
             label: 'Medicamentos',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: 'Consultas',
+            icon: Icon(Icons.chat),
+            label: 'Chat IA',
           ),
         ],
       ),

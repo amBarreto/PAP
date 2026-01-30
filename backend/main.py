@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException #criar API
+from fastapi.middleware.cors import CORSMiddleware #flutter com API
+from pydantic import BaseModel #confirmaçao de dados
 import google.genai as genai
-import os
+import os #venv
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -10,6 +10,7 @@ load_dotenv()
 
 app = FastAPI(title="MediHora IA API")
 
+#CORS cross origin resource sharing
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -64,7 +65,7 @@ async def chat(request: PerguntaRequest):
         # Usa Gemini 2.5 Flash (mais recente!)
         response = client.models.generate_content(
             model='models/gemini-2.5-flash',
-            contents=prompt
+            contents=prompt 
         )
         
         return RespostaResponse(
@@ -76,7 +77,8 @@ async def chat(request: PerguntaRequest):
         print(f"ERRO: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/health")
+# Health check endpoint
+@app.get("/health") 
 async def health_check():
     return {"status": "healthy", "model": "gemini-2.5-flash"}
 

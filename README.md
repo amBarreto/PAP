@@ -48,7 +48,7 @@ A aplicação permite ao utilizador:
 
 ```text
 MediHora/
-│
+|
 ├── backend/                                    # Backend Python (Google Gemini API)
 │   ├── venv/                                   # Ambiente virtual Python
 │   ├── main.py                                 # API FastAPI (endpoints /chat, /health)

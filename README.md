@@ -36,12 +36,19 @@ A aplicação permite ao utilizador:
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Flutter**
-- **Dart**
-- **Material Design**
-- **ISAR Database** – persistência local 
-- **Git & GitHub** - para controlo de versões
+## Frontend (Flutter)
 
+- **Framework:** Flutter/Dart
+- **Base de dados:** Isar (NoSQL local)
+- **Notificações:** flutter_local_notifications
+- **HTTP:** package http
+
+## Backend (Python)
+
+- **Framework:** FastAPI
+- **IA:** Google Gemini 2.5 Flash
+- **Deploy:** Render (plano Free)
+- **Autenticação:** API Key (variável de ambiente)
 ---
 
 ## 📂 Estrutura do Projeto

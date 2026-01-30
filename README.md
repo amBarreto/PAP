@@ -90,9 +90,7 @@ MediHora/
 │   │
 │   ├── pages/
 │   │   ├── consultas_page.dart                 # Gestão de consultas (adicionar, editar, remover, notificações)
-│   │   ├── chat_ia_page.dart                   # Chat com IA (Google Gemini, Markdown, modo escuro)
-│   │   └── sos_page.dart                       # Modo emergência (112, SNS 24, info medicamentos/consultas)
-│   │
+│   │   └── chat_ia_page.dart                   # Chat com IA (Google Gemini, Markdown, modo escuro)
 │   └── widgets/
 │       └── time_numpad.dart                    # Teclado numérico personalizado para hora
 │

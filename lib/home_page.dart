@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'main.dart';
 import 'pages/consultas_page.dart';
-import 'pages/chat_ai_page.dart';
+import 'pages/ia_page.dart';
 import 'drawer.dart';
 
 class HomePage extends StatefulWidget {
@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
         toggleTheme: widget.toggleTheme,
         showAppBar: false,  // Não mostra AppBar própria
       ),
-      const ChatIAPage(showAppBar: false),  // Não mostra AppBar própria
+      const AiPage(showAppBar: false),  // Não mostra AppBar própria
     ];
 
     return Scaffold(
@@ -65,7 +65,7 @@ class _HomePageState extends State<HomePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
-            label: 'Chat IA',
+            label: 'Agente IA',
           ),
         ],
       ),

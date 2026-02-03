@@ -30,12 +30,13 @@ Em caso de dúvidas, recomenda consultar um profissional de saúde.
 Usa português de Portugal.
 """
 PROMPTS = {
+    
    "para_que_serve": """
-   Explica para que serve o medicamento {medicamento}.
-    Sê breve e objetivo. Máximo 150 palavras.
-    Formato:
-    - Lista os usos principais
-    - Menciona indicações terapêuticas
+Explica para que serve o medicamento {medicamento}.
+Sê breve e objetivo. Máximo 150 palavras.
+Formato:
+- Lista os usos principais
+- Menciona indicações terapêuticas
 """,
 
     "como_tomar": """

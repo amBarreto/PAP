@@ -36,26 +36,69 @@ A aplicação permite ao utilizador:
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Flutter**
-- **Dart**
-- **Material Design**
-- **ISAR Database** – persistência local 
-- **Git & GitHub** - para controlo de versões
+## Frontend (Flutter)
 
----
+- **Framework:** Flutter/Dart
+- **Base de dados:** Isar (NoSQL local)
+- **Notificações:** flutter_local_notifications
+- **HTTP:** package http
+
+## Backend (Python)
+
+- **Framework:** FastAPI
+- **IA:** Google Gemini 2.5 Flash
+- **Deploy:** Render (plano Free)
+- **Autenticação:** API Key (variável de ambiente)
+
+## 🔁Fluxo de Dados
+
+```text
+Medicamentos/Consultas:
+User → Flutter UI → Isar (local) → Notificações (alarmes)
+
+Chat IA:
+User → Flutter → HTTP → Render → main.py → Gemini → resposta
+```
 
 ## 📂 Estrutura do Projeto
 
 ```text
-lib/
- ├── main.dart                           # Entrada principal da aplicação
- ├── models/
- │    ├── medicamento.dart               # Modelo de dados Medicamento (utente, medicamento, dosagem, hora, dias da semana, recorrente, permanente, período)
- │    └── medicamento.g.dart             # Ficheiro gerado automaticamente pelo Isar para persistência local
- ├── services/
- │    └── notification_service.dart      # Serviço de notificações e alarmes (agendamento, cancelamento, permissões)
- └── drawer.dart                         # Drawer com tema claro/escuro, ver alarmes agendados, linha de apoio SNS 24
-
-pubspec.yaml                             # Dependências (isar, flutter_local_notifications, timezone, permission_handler, path_provider)
-README.md                                # Documentação do projeto
+MediHora/
+|
+├── backend/                                    # Backend Python (Google Gemini API)
+│   ├── venv/                                   # Ambiente virtual Python
+│   ├── main.py                                 # API FastAPI (endpoints /chat, /health)
+│   ├── .env                                    # Chave da Google Gemini API
+│   ├── requirements.txt                        # Dependências Python
+│   └── .gitignore                              # Ignora venv e .env
+│
+├── lib/
+│   ├── main.dart                               # Entrada principal, configuração Isar, tema claro/escuro
+│   ├── home_page.dart                          # Navegação com Bottom Navigation (Consultas, Medicamentos, IA Chat)
+│   ├── drawer.dart                             # Menu lateral (modo escuro, alarmes, linha SNS 24, SOS)
+│   │
+│   ├── models/
+│   │   ├── medicamento.dart                    # Modelo Medicamento (nome, dosagem, hora, dias, recorrente, ativo)
+│   │   ├── medicamento.g.dart                  # Gerado pelo Isar (build_runner)
+│   │   ├── consulta.dart                       # Modelo Consulta (utente, médico, especialidade, data, notificações)
+│   │   ├── consulta.g.dart                     # Gerado pelo Isar (build_runner)
+│   │   └── mensagem.dart                       # Modelo Mensagem (texto, isUser, timestamp) - Chat IA
+│   │
+│   ├── services/
+│   │   ├── notification_service.dart           # Serviço de notificações (agendar, cancelar, permissões)
+│   │   └── ia_service.dart                     # Comunicação com backend Python (POST /chat, GET /health)
+│   │
+│   ├── pages/
+│   │   ├── consultas_page.dart                 # Gestão de consultas (adicionar, editar, remover, notificações)
+│   │   └── chat_ia_page.dart                   # Chat com IA (Google Gemini, Markdown, modo escuro)
+│   └── widgets/
+│       └── time_numpad.dart                    # Teclado numérico personalizado para hora
+│
+├── android/                                    # Configuração Android
+├── ios/                                        # Configuração iOS
+│
+├── pubspec.yaml                                # Dependências Flutter
+├── .gitignore                                  # Ignora arquivos gerados e sensíveis
+└── README.md                                   # Documentação do projeto
+```
 

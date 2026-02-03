@@ -38,7 +38,7 @@ PROMPTS = {
     - Menciona indicações terapêuticas
 """,
 
-    "como_usar": """
+    "como_tomar": """
     Explica como tomar o medicamento {medicamento}.
 Inclui:
 - Dose habitual para adultos
@@ -57,6 +57,15 @@ Inclui:
 Máximo 150 palavras.
 """,
 
+    "contraindicacoes": """
+Lista as contraindicações do medicamento {medicamento}.
+Inclui:
+- Quem NÃO deve tomar
+- Condições de saúde que impedem o uso
+- Situações especiais (gravidez, amamentação)
+Máximo 150 palavras.
+""",
+    
     "interacoes": """
 Lista as principais interações medicamentosas do {medicamento}.
 Inclui:

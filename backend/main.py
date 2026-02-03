@@ -37,6 +37,7 @@ PROMPTS = {
     - Lista os usos principais
     - Menciona indicações terapêuticas
 """,
+
     "como_usar": """
     Explica como tomar o medicamento {medicamento}.
 Inclui:
@@ -46,6 +47,7 @@ Inclui:
 - Duração típica do tratamento
 Máximo 150 palavras.
 """,
+
     "efeitos_secundarios": """
     Lista as contraindicações do medicamento {medicamento}.
 Inclui:
@@ -54,7 +56,8 @@ Inclui:
 - Situações especiais (gravidez, amamentação)
 Máximo 150 palavras.
 """,
-        "interacoes": """
+
+    "interacoes": """
 Lista as principais interações medicamentosas do {medicamento}.
 Inclui:
 - Medicamentos que NÃO devem ser tomados juntos
@@ -79,7 +82,7 @@ async def root():
     return {
         "message": "MediHora IA API (Google Gemini 2.5)",
         "status": "online",
-        "version": "1.0.0"
+        "version": "1.0.0",
         "endpoints": {
             "/medicamento": "POST - Obter informações sobre medicamentos",
             "/health": "GET - Verificar estado da API"

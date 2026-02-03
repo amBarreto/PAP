@@ -23,25 +23,55 @@ app.add_middleware(
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 SYSTEM_PROMPT = """
-És um assistente de saúde virtual especializado em medicação e consultas médicas.
-
-Regras importantes:
-1. Sempre alerta que NÃO substituis um médico
-2. Em caso de emergência, recomenda ligar 112 ou SNS 24 (808 24 24 24)
-3. Não diagnostiques doenças - sugere consultar um profissional
-4. Dá informações gerais sobre medicamentos (posologia, efeitos secundários comuns)
-5. Sê claro, conciso e empático
-6. Se não souberes algo, admite e sugere consultar um médico
-
-És português e usas português de Portugal.
+És um assistente de saúde especializado em medicamentos.
+Dá informações precisas, claras e concisas.
+Sempre alerta que não substituis um médico.
+Em caso de dúvidas, recomenda consultar um profissional de saúde.
+Usa português de Portugal.
 """
+PROMPTS = {
+   "para_que_serve": """
+   Explica para que serve o medicamento {medicamento}.
+    Sê breve e objetivo. Máximo 150 palavras.
+    Formato:
+    - Lista os usos principais
+    - Menciona indicações terapêuticas
+""",
+    "como_usar": """
+    Explica como tomar o medicamento {medicamento}.
+Inclui:
+- Dose habitual para adultos
+- Frequência (de quantas em quantas horas)
+- Com ou sem alimentos
+- Duração típica do tratamento
+Máximo 150 palavras.
+""",
+    "efeitos_secundarios": """
+    Lista as contraindicações do medicamento {medicamento}.
+Inclui:
+- Quem NÃO deve tomar
+- Condições de saúde que impedem o uso
+- Situações especiais (gravidez, amamentação)
+Máximo 150 palavras.
+""",
+        "interacoes": """
+Lista as principais interações medicamentosas do {medicamento}.
+Inclui:
+- Medicamentos que NÃO devem ser tomados juntos
+- Alimentos/bebidas a evitar
+- Suplementos que podem interferir
+Máximo 150 palavras.
+""",
+}
 
-class PerguntaRequest(BaseModel):
-    pergunta: str
-    contexto: str = ""
+class MedicamentoRequest(BaseModel):
+    medicamento: str 
+    tipo_consulta: str 
 
 class RespostaResponse(BaseModel):
-    resposta: str
+    resposta: str 
+    medicamento: str 
+    tipo_consulta: str 
     timestamp: str
 
 @app.get("/")
@@ -50,18 +80,26 @@ async def root():
         "message": "MediHora IA API (Google Gemini 2.5)",
         "status": "online",
         "version": "1.0.0"
+        "endpoints": {
+            "/medicamento": "POST - Obter informações sobre medicamentos",
+            "/health": "GET - Verificar estado da API"
+        }
     }
 
-@app.post("/chat", response_model=RespostaResponse)
-async def chat(request: PerguntaRequest):
+@app.post("/medicamento", response_model=RespostaResponse)
+async def consultar_medicamento(request: MedicamentoRequest):
     try:
-        prompt = f"{SYSTEM_PROMPT}\n\n"
+        #Valida tipo de consulta
+        if request.tipo_consulta not in PROMPTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Tipo de consulta inválido. Opções: {','.join(PROMPTS.keys())}"
+            )
         
-        if request.contexto:
-            prompt += f"Contexto do utilizador: {request.contexto}\n\n"
-        
-        prompt += f"Utilizador: {request.pergunta}\n\nAssistente:"
-        
+        prompt_template = PROMPTS[request.tipo_consulta]
+        prompt = f"{SYSTEM_PROMPT}\n\n{prompt_template.format(medicamento=request.medicamento)}"
+           
+
         # Usa Gemini 2.5 Flash (mais recente!)
         response = client.models.generate_content(
             model='models/gemini-2.5-flash',
@@ -70,9 +108,12 @@ async def chat(request: PerguntaRequest):
         
         return RespostaResponse(
             resposta=response.text,
+            medicamento=request.medicamento,
+            tipo_consulta=request.tipo_consulta,
             timestamp=datetime.now().isoformat()
         )
-        
+    except HTTPException: 
+        raise
     except Exception as e:
         print(f"ERRO: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -80,7 +121,10 @@ async def chat(request: PerguntaRequest):
 # Health check endpoint
 @app.get("/health") 
 async def health_check():
-    return {"status": "healthy", "model": "gemini-2.5-flash"}
+    return {"status": "healthy", 
+    "model": "gemini-2.5-flash",
+    "timestamp": datetime.now().isoformat()
+    }
 
 if __name__ == "__main__":
     import uvicorn

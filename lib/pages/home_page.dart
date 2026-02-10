@@ -1,10 +1,10 @@
 //controla a navegaçao entre paginas
 
 import 'package:flutter/material.dart';
-import 'main.dart';
-import 'pages/consultas_page.dart';
-import 'pages/ia_page.dart';
-import 'drawer.dart';
+import '../main.dart';
+import 'consultas_page.dart';
+import 'ia_page.dart';
+import '../widgets/drawer.dart';
 
 class HomePage extends StatefulWidget {
   final bool isDarkMode;
@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
         toggleTheme: widget.toggleTheme,
         showAppBar: false,  // Não mostra AppBar própria
       ),
-      const AiPage(showAppBar: false),  // Não mostra AppBar própria
+      const IAPage(showAppBar: true),  //mostra AppBar própria
     ];
 
     return Scaffold(

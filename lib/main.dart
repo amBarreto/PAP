@@ -3,10 +3,10 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/medicamento.dart';
 import 'models/consultas.dart';
-import 'drawer.dart';
+import 'widgets/drawer.dart';
 import 'services/notification_service.dart';
 import 'widgets/numpad.dart';
-import 'home_page.dart';
+import 'pages/home_page.dart';
 
 late Isar isar;
 
@@ -363,6 +363,45 @@ class _MedicationPageState extends State<MedicationPage> {
                               : 'Período selecionado',
                         ),
                       ),
+                    //Botões "Todos" e "Limpar" (EDITAR)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setStateDialog(() {
+                                  editSelectedDays = {1, 2, 3, 4, 5, 6, 7};
+                                });
+                              },
+                              icon: const Icon(Icons.check_circle_outline, size: 20),
+                              label: const Text('Todos'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setStateDialog(() {
+                                  editSelectedDays.clear();
+                                });
+                              },
+                              icon: const Icon(Icons.clear, size: 20),
+                              label: const Text('Limpar'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
                     Wrap(
                       spacing: 6,
                       children: List.generate(7, (i) {
@@ -465,13 +504,13 @@ class _MedicationPageState extends State<MedicationPage> {
         title: const Text('💊 MediHora'),
         centerTitle: true,
       )
-          : null, // permite ocultar a AppBar se necessário
+          : null,
       drawer: widget.showAppBar
       ? AppDrawer(
         isDarkMode: widget.isDarkMode,
         toggleTheme: widget.toggleTheme,
       )
-      : null, // permite ocultar o drawer se a AppBar estiver oculta
+      : null,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -590,6 +629,44 @@ class _MedicationPageState extends State<MedicationPage> {
                               : 'Período selecionado',
                         ),
                       ),
+                    //Botões "Todos" e "Limpar" (ADICIONAR)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  selectedDays = {1, 2, 3, 4, 5, 6, 7};
+                                });
+                              },
+                              icon: const Icon(Icons.check_circle_outline, size: 20),
+                              label: const Text('Todos'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  selectedDays.clear();
+                                });
+                              },
+                              icon: const Icon(Icons.clear, size: 20),
+                              label: const Text('Limpar'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                     Wrap(
                       spacing: 6,

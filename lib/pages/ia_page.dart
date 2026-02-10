@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import '../services/ia_service.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-class AiPage extends StatefulWidget {
+class IAPage extends StatefulWidget {
   final bool showAppBar;
 
-  const AiPage({
+  const IAPage({
     super.key,
     this.showAppBar = true,
   });
 
   @override
-  State<AiPage> createState() => _AiPageState();
+  State<IAPage> createState() => _IAPageState();
 }
 
-class _AiPageState extends State<AiPage> {
+class _IAPageState extends State<IAPage> {
   final TextEditingController medicamentoController = TextEditingController(); // Controlador do campo de texto
   final IAService iaService = IAService(); //API
   
@@ -53,7 +53,7 @@ class _AiPageState extends State<AiPage> {
     {
       'id': 'interacoes',
       'titulo': 'Interações',
-      
+
       'icon': Icons.sync_problem,
       'cor': Colors.purple,
     },

@@ -429,6 +429,7 @@ class _MedicationPageState extends State<MedicationPage> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
+                    // Criar medicamento atualizado
                     final atualizadoMed = Medicamento(
                       utente: editUtenteController.text.trim(),
                       medicamento: editMedicamentoController.text.trim(),
@@ -444,13 +445,40 @@ class _MedicationPageState extends State<MedicationPage> {
 
                     atualizadoMed.id = med.id;
 
+                    // 🔹 1. CANCELAR ALARMES ANTIGOS
+                    print('🔄 Cancelando alarmes antigos...');
+                    if (med.recorrente && med.intervaloHoras != null) {
+                      final numAlarmes = 24 ~/ med.intervaloHoras!;
+                      for (int i = 0; i < numAlarmes; i++) {
+                        await NotificationService().cancelNotification(med.id * 100 + i);
+                        print('  ❌ Cancelado alarme antigo ID: ${med.id * 100 + i}');
+                      }
+                    } else {
+                      for (final day in med.diasSemana) {
+                        await NotificationService().cancelNotification(med.id * 10 + day);
+                        print('  ❌ Cancelado alarme antigo ID: ${med.id * 10 + day}');
+                      }
+                    }
+
+                    // 🔹 2. GUARDAR NA BASE DE DADOS
                     await isar.writeTxn(() async {
                       await isar.medicamentos.put(atualizadoMed);
                     });
 
+                    // 🔹 3. CRIAR ALARMES NOVOS
+                    print('🔔 Criando alarmes novos...');
+                    await _agendarAlarmes(atualizadoMed);
+
                     await loadMeds();
+
                     if (context.mounted) {
                       Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✅ Medicamento atualizado e alarmes reagendados!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
                     }
                   },
                   child: const Text('Guardar'),
@@ -491,7 +519,7 @@ class _MedicationPageState extends State<MedicationPage> {
     }
   }
 
-  String formatDays(List<int> days) {
+  String formatDays(List<int> days) { //1=Segunda, 2=Terça, ..., 7=Domingo
     final sorted = [...days]..sort();
     return sorted.map((d) => daysLabels[d - 1]).join(', ');
   }
@@ -504,13 +532,13 @@ class _MedicationPageState extends State<MedicationPage> {
         title: const Text('💊 MediHora'),
         centerTitle: true,
       )
-          : null,
+          : null, //permite ocultar a AppBar se necessário
       drawer: widget.showAppBar
       ? AppDrawer(
         isDarkMode: widget.isDarkMode,
         toggleTheme: widget.toggleTheme,
       )
-      : null,
+          : null, //permite ocultar a Drawer se a AppBar estiver oculta
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

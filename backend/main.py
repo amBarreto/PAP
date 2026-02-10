@@ -40,7 +40,7 @@ Formato:
 """,
 
     "como_tomar": """
-    Explica como tomar o medicamento {medicamento}.
+Explica como tomar o medicamento {medicamento}.
 Inclui:
 - Dose habitual para adultos
 - Frequência (de quantas em quantas horas)
@@ -50,11 +50,11 @@ Máximo 150 palavras.
 """,
 
     "efeitos_secundarios": """
-    Lista as contraindicações do medicamento {medicamento}.
-Inclui:
-- Quem NÃO deve tomar
-- Condições de saúde que impedem o uso
-- Situações especiais (gravidez, amamentação)
+Lista os efeitos secundários mais comuns do medicamento {medicamento}.
+Organiza por:
+- Frequentes (mais de 10%)
+- Pouco frequentes (1-10%)
+- Raros (menos de 1%)
 Máximo 150 palavras.
 """,
 

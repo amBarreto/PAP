@@ -175,10 +175,22 @@ class _TimeNumpadState extends State<TimeNumpad> {
   Widget _buildNumpadButton(String value) {
     final isBackspace = value == '⌫';
     final isConfirm = value == '✓';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    Color buttonColor = Colors.teal.shade100;
-    if (isBackspace) buttonColor = Colors.orange.shade100;
-    if (isConfirm) buttonColor = Colors.green.shade100;
+    // CORES AJUSTADAS
+    Color buttonColor;
+    Color textColor;
+    
+    if (isBackspace) {
+      buttonColor = Colors.red.shade400;
+      textColor = Colors.white;  // Branco sempre visível
+    } else if (isConfirm) {
+      buttonColor = Colors.green.shade400;
+      textColor = Colors.white;  // Branco sempre visível
+    } else {
+      buttonColor = isDark ? Colors.teal.shade700 : Colors.teal.shade100;
+      textColor = isDark ? Colors.white : Colors.black87;
+    }
     
     return SizedBox(
       width: 70,
@@ -186,7 +198,7 @@ class _TimeNumpadState extends State<TimeNumpad> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: buttonColor,
-          foregroundColor: Colors.black87,
+          foregroundColor: textColor,  
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -201,13 +213,17 @@ class _TimeNumpadState extends State<TimeNumpad> {
             _onNumberPressed(value);
           }
         },
-        child: Text(
-          value,
-          style: TextStyle(
-            fontSize: isBackspace || isConfirm ? 28 : 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: isBackspace
+            ? const Icon(Icons.backspace, size: 24)  
+            : isConfirm
+                ? const Icon(Icons.check, size: 28)  
+                : Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
       ),
     );
   }

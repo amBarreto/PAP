@@ -1,10 +1,10 @@
 //controla a navegaçao entre paginas
 
 import 'package:flutter/material.dart';
-import '../main.dart';
-import 'consultas_page.dart';
 import 'ia_page.dart';
 import '../widgets/drawer.dart';
+import 'medicacao_list_page.dart';
+import 'consultas_list_page.dart';
 
 class HomePage extends StatefulWidget {
   final bool isDarkMode;
@@ -27,15 +27,18 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     // Lista de páginas
     final pages = [
-      const ConsultasPage(showAppBar: false),  // Não mostra AppBar própria
-
-      MedicationPage(
-        isDarkMode: widget.isDarkMode,
-        toggleTheme: widget.toggleTheme,
-        showAppBar: false,  // Não mostra AppBar própria
-      ),
-      const IAPage(showAppBar: true),  //mostra AppBar própria
-    ];
+  ConsultationListPage( // 🔹 MUDOU
+    isDarkMode: widget.isDarkMode,
+    toggleTheme: widget.toggleTheme,
+    showAppBar: false,
+  ),
+  MedicationListPage(
+    isDarkMode: widget.isDarkMode,
+    toggleTheme: widget.toggleTheme,
+    showAppBar: false,
+  ),
+  const IAPage(showAppBar: false),
+];
 
     return Scaffold(
       appBar: AppBar(

@@ -39,6 +39,7 @@ dependencies:
   http: ^1.6.0 #HTTP API GEMINI
   flutter_markdown: ^0.6.10
   url_launcher: ^6.2.2 #usado para fazer chamadas no telemovel
+  flutter_dotenv: ^5.0.2 #para esconder a URL da API
 
 
 dev_dependencies:
@@ -65,7 +66,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
+  assets:
+    - .env
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

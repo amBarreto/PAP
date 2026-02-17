@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';  // 🔹 ADICIONA
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // ler variaveis de ambiente 
 
 class IAService {
-  // 🔹 LER URL DO .ENV (em vez de hardcoded)
+  //LE URL DO .ENV (em vez de hardcoded)
   String get baseUrl => dotenv.env['API_BASE_URL'] ?? '';
   
   Future<String> consultarMedicamento(

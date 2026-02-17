@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     // Lista de páginas
     final pages = [
-  ConsultationListPage( // 🔹 MUDOU
+  ConsultationListPage( 
     isDarkMode: widget.isDarkMode,
     toggleTheme: widget.toggleTheme,
     showAppBar: false,
@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
     toggleTheme: widget.toggleTheme,
     showAppBar: false,
   ),
-  const IAPage(showAppBar: false),
+  const IAPage(showAppBar: true),
 ];
 
     return Scaffold(

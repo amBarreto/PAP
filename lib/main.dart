@@ -12,7 +12,7 @@ late Isar isar;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env"); // Carrega as variáveis de ambiente
+  await dotenv.load(fileName: ".env");
 
   final dir = await getApplicationDocumentsDirectory();
   isar = await Isar.open(
@@ -21,7 +21,7 @@ void main() async {
   );
 
   await NotificationService().initialize();
-
+  
   runApp(const MediHoraApp());
 }
 
@@ -48,7 +48,6 @@ class _MediHoraAppState extends State<MediHoraApp> {
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       
-      // 🎨 TEMA CLARO MELHORADO (Material 3)
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -84,7 +83,6 @@ class _MediHoraAppState extends State<MediHoraApp> {
         ),
       ),
       
-      // 🌙 TEMA ESCURO MELHORADO (Material 3)
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

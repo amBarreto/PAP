@@ -79,11 +79,9 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Cancelar alarmes
       await NotificationService().cancelNotification(10000 + consulta.id);
       await NotificationService().cancelNotification(20000 + consulta.id);
 
-      // Remover da BD
       await isar.writeTxn(() async {
         await isar.consultas.delete(consulta.id);
       });
@@ -96,6 +94,66 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
     } catch (e) {
       if (mounted) {
         _showErrorSnackBar('Erro ao remover consulta');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // 🔹 Apagar consultas com mais de 15 dias
+  Future<void> _limparConsultasAntigas() async {
+    final limite = DateTime.now().subtract(const Duration(days: 15));
+    final antigas = _consultas.where((c) => c.dataHora.isBefore(limite)).toList();
+
+    if (antigas.isEmpty) {
+      _showErrorSnackBar('Não há consultas com mais de 15 dias para apagar.');
+      return;
+    }
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('🗑️ Limpar consultas antigas'),
+        content: Text(
+          'Isto vai apagar ${antigas.length} consulta(s) com mais de 15 dias.\n\nTens a certeza?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Apagar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      for (final consulta in antigas) {
+        await NotificationService().cancelNotification(10000 + consulta.id);
+        await NotificationService().cancelNotification(20000 + consulta.id);
+        await isar.writeTxn(() async {
+          await isar.consultas.delete(consulta.id);
+        });
+      }
+
+      await _loadConsultas();
+
+      if (mounted) {
+        _showSuccessSnackBar('${antigas.length} consulta(s) apagada(s) com sucesso!');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Erro ao apagar consultas antigas');
       }
     } finally {
       if (mounted) {
@@ -234,9 +292,11 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
       );
     }
 
-    // Separar consultas em próximas e passadas
     final proximasConsultas = _consultas.where((c) => !_isPassada(c.dataHora)).toList();
     final consultasPassadas = _consultas.where((c) => _isPassada(c.dataHora)).toList();
+    // 🔹 Consultas com mais de 15 dias (para mostrar o botão)
+    final limite = DateTime.now().subtract(const Duration(days: 15));
+    final temAntigas = consultasPassadas.any((c) => c.dataHora.isBefore(limite));
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -252,7 +312,22 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
         ],
         
         if (consultasPassadas.isNotEmpty) ...[
-          _buildSectionHeader('Consultas Passadas', Icons.history),
+          // 🔹 Header com botão de limpar
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionHeader('Consultas Passadas', Icons.history),
+              if (temAntigas)
+                TextButton.icon(
+                  onPressed: _limparConsultasAntigas,
+                  icon: const Icon(Icons.delete_sweep, size: 18, color: Colors.red),
+                  label: const Text(
+                    'Limpar +15 dias',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 12),
           ...consultasPassadas.map((consulta) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -397,7 +472,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
                           final resultado = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ConsultationFormPage(
+              builder: (context) => ConsultationFormPage(
                                 isDarkMode: widget.isDarkMode,
                                 consulta: consulta,
                               ),

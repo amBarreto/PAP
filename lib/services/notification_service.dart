@@ -12,7 +12,6 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications = 
       FlutterLocalNotificationsPlugin();
 
-  // Inicializar o serviço de notificações
   Future<void> initialize() async {
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Atlantic/Azores'));
@@ -28,35 +27,30 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
 
-    // Pedir permissões no Android 13+
     await _requestPermissions();
   }
 
-  // Pedir permissões
   Future<void> _requestPermissions() async {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
-    
     if (await Permission.scheduleExactAlarm.isDenied) {
       await Permission.scheduleExactAlarm.request();
     }
   }
 
-  // Quando o utilizador clica na notificação
   void _onNotificationTap(NotificationResponse response) {
     debugPrint('Notificação clicada: ${response.payload}');
   }
 
-  // Mostrar notificação imediata
+  // Notificação imediata
   Future<void> showNotification({
     required int id,
     required String title,
     required String body,
     String? payload,
   }) async {
-    const AndroidNotificationDetails androidDetails = 
-        AndroidNotificationDetails(
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'medihora_channel',
       'Lembretes de Medicamentos',
       channelDescription: 'Notificações para lembrar de tomar medicamentos',
@@ -65,14 +59,10 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
     );
-
-    const NotificationDetails details = 
-        NotificationDetails(android: androidDetails);
-
-    await _notifications.show(id, title, body, details, payload: payload);
+    await _notifications.show(id, title, body, const NotificationDetails(android: androidDetails), payload: payload);
   }
 
-  // Agendar alarme para hora específica
+  // Notificação única numa data/hora específica (consultas)
   Future<void> scheduleNotification({
     required int id,
     required String title,
@@ -82,8 +72,7 @@ class NotificationService {
   }) async {
     final scheduledTZ = tz.TZDateTime.from(scheduledTime, tz.local);
 
-    const AndroidNotificationDetails androidDetails = 
-        AndroidNotificationDetails(
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'medihora_channel',
       'Lembretes de Medicamentos',
       channelDescription: 'Notificações para lembrar de tomar medicamentos',
@@ -94,23 +83,16 @@ class NotificationService {
       fullScreenIntent: true,
     );
 
-    const NotificationDetails details = 
-        NotificationDetails(android: androidDetails);
-
     await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledTZ,
-      details,
+      id, title, body, scheduledTZ,
+      const NotificationDetails(android: androidDetails),
       payload: payload,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
-  // Agendar alarme diário (mesma hora todos os dias)
+  // 🔹 Notificação diária — repete todos os dias à mesma hora (1 alarme apenas)
   Future<void> scheduleDailyNotification({
     required int id,
     required String title,
@@ -119,23 +101,13 @@ class NotificationService {
     String? payload,
   }) async {
     final now = tz.TZDateTime.now(tz.local);
-    
-    var scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      time.hour,
-      time.minute,
-    );
+    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, time.hour, time.minute);
 
-    // Se a hora já passou hoje, agenda para amanhã
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    const AndroidNotificationDetails androidDetails = 
-        AndroidNotificationDetails(
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'medihora_channel',
       'Lembretes de Medicamentos',
       channelDescription: 'Notificações para lembrar de tomar medicamentos',
@@ -145,34 +117,98 @@ class NotificationService {
       enableVibration: true,
     );
 
-    const NotificationDetails details = 
-        NotificationDetails(android: androidDetails);
-
     await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledDate,
-      details,
+      id, title, body, scheduledDate,
+      const NotificationDetails(android: androidDetails),
       payload: payload,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time, // repete todos os dias
     );
   }
 
-  // Cancelar um alarme específico
+  // 🔹 Notificação semanal — repete apenas num dia específico da semana
+  // dayOfWeek: 1=Segunda, 2=Terça, 3=Quarta, 4=Quinta, 5=Sexta, 6=Sábado, 7=Domingo
+  Future<void> scheduleWeeklyNotification({
+    required int id,
+    required String title,
+    required String body,
+    required TimeOfDay time,
+    required int dayOfWeek,
+    String? payload,
+  }) async {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, time.hour, time.minute);
+
+    // Avançar até ao próximo dia da semana correto
+    while (scheduledDate.weekday != dayOfWeek || scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'medihora_channel',
+      'Lembretes de Medicamentos',
+      channelDescription: 'Notificações para lembrar de tomar medicamentos',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    await _notifications.zonedSchedule(
+      id, title, body, scheduledDate,
+      const NotificationDetails(android: androidDetails),
+      payload: payload,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime, // repete só neste dia da semana
+    );
+  }
+
+  // 🔹 Notificação recorrente (várias tomas por dia) — repete todos os dias à mesma hora
+  Future<void> scheduleRepeatingNotification({
+    required int id,
+    required String title,
+    required String body,
+    required TimeOfDay time,
+    String? payload,
+  }) async {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, time.hour, time.minute);
+
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'medihora_channel',
+      'Lembretes de Medicamentos',
+      channelDescription: 'Notificações para lembrar de tomar medicamentos',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      fullScreenIntent: true,
+    );
+
+    await _notifications.zonedSchedule(
+      id, title, body, scheduledDate,
+      const NotificationDetails(android: androidDetails),
+      payload: payload,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time, // repete todos os dias
+    );
+  }
+
   Future<void> cancelNotification(int id) async {
     await _notifications.cancel(id);
   }
 
-  // Cancelar todos os alarmes
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
   }
 
-  // Listar alarmes agendados
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
     return await _notifications.pendingNotificationRequests();
   }

@@ -6,7 +6,7 @@ import '../widgets/numpad.dart';
 
 class MedicationFormPage extends StatefulWidget {
   final bool isDarkMode;
-  final Medicamento? medicamento; // null = adicionar, não-null = editar
+  final Medicamento? medicamento;
 
   const MedicationFormPage({
     super.key,
@@ -21,13 +21,11 @@ class MedicationFormPage extends StatefulWidget {
 class _MedicationFormPageState extends State<MedicationFormPage> {
   final _formKey = GlobalKey<FormState>();
   
-  // Controllers
   final _utenteController = TextEditingController();
   final _medicamentoController = TextEditingController();
   final _dosagemController = TextEditingController();
   final _horaController = TextEditingController();
 
-  // State
   Set<int> _selectedDays = {};
   bool _isPermanente = true;
   bool _isRecorrente = false;
@@ -42,9 +40,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
   @override
   void initState() {
     super.initState();
-    if (_isEditing) {
-      _loadMedicamentoData();
-    }
+    if (_isEditing) _loadMedicamentoData();
   }
 
   void _loadMedicamentoData() {
@@ -59,10 +55,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
     _intervaloHoras = med.intervaloHoras ?? 8;
     
     if (!med.permanente && med.dataInicio != null && med.dataFim != null) {
-      _selectedDateRange = DateTimeRange(
-        start: med.dataInicio!,
-        end: med.dataFim!,
-      );
+      _selectedDateRange = DateTimeRange(start: med.dataInicio!, end: med.dataFim!);
     }
   }
 
@@ -90,20 +83,15 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
         );
       },
     );
-    
-    if (range != null && mounted) {
-      setState(() => _selectedDateRange = range);
-    }
+    if (range != null && mounted) setState(() => _selectedDateRange = range);
   }
 
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
-    
     if (_selectedDays.isEmpty) {
       _showErrorSnackBar('Seleciona pelo menos um dia da semana');
       return;
     }
-    
     if (!_isPermanente && _selectedDateRange == null) {
       _showErrorSnackBar('Seleciona o período do medicamento');
       return;
@@ -126,34 +114,30 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
       );
 
       if (_isEditing) {
-        // EDITAR
         medicamento.id = widget.medicamento!.id;
-        
-        // Cancelar alarmes antigos
         final medAntigo = widget.medicamento!;
+
         if (medAntigo.recorrente && medAntigo.intervaloHoras != null) {
           final numAlarmes = 24 ~/ medAntigo.intervaloHoras!;
           for (int i = 0; i < numAlarmes; i++) {
             await NotificationService().cancelNotification(medAntigo.id * 100 + i);
           }
         } else {
+          // Cancelar alarme diário (id base) e alarmes semanais por dia
+          await NotificationService().cancelNotification(medAntigo.id);
           for (final day in medAntigo.diasSemana) {
             await NotificationService().cancelNotification(medAntigo.id * 10 + day);
           }
         }
       }
 
-      // Guardar
       await isar.writeTxn(() async {
         await isar.medicamentos.put(medicamento);
       });
 
-      // Agendar alarmes
       await _agendarAlarmes(medicamento);
-      
-      if (mounted) {
-        Navigator.pop(context, true); // true = sucesso
-      }
+
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
         _showErrorSnackBar('Erro ao guardar medicamento');
@@ -172,39 +156,45 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
 
     try {
       if (med.recorrente && med.intervaloHoras != null) {
-        final now = DateTime.now();
-        var nextAlarm = DateTime(now.year, now.month, now.day, hour, minute);
-        
-        if (nextAlarm.isBefore(now)) {
-          nextAlarm = nextAlarm.add(const Duration(days: 1));
-        }
-
+        // 🔹 Várias tomas por dia — cria um alarme por toma, repete todos os dias
         final numAlarmes = 24 ~/ med.intervaloHoras!;
-        
         for (int i = 0; i < numAlarmes; i++) {
-          final alarmTime = nextAlarm.add(Duration(hours: med.intervaloHoras! * i));
-          
-          await NotificationService().scheduleNotification(
+          final tomaHour = (hour + med.intervaloHoras! * i) % 24;
+          await NotificationService().scheduleRepeatingNotification(
             id: med.id * 100 + i,
             title: '💊 Hora de tomar ${med.medicamento}!',
-            body: '${med.utente} • ${med.dosagem}',
-            scheduledTime: alarmTime,
+            body: '${med.utente} • ${med.dosagem} • De ${med.intervaloHoras}h em ${med.intervaloHoras}h',
+            time: TimeOfDay(hour: tomaHour, minute: minute),
             payload: med.id.toString(),
           );
         }
       } else {
-        for (final day in med.diasSemana) {
+        // 🔹 Toma única diária
+        if (med.diasSemana.length == 7) {
+          // Todos os dias → 1 único alarme diário
           await NotificationService().scheduleDailyNotification(
-            id: med.id * 10 + day,
+            id: med.id, // ID simples, sem multiplicar por dia
             title: '💊 Hora de tomar ${med.medicamento}!',
-            body: '${med.utente} • ${med.dosagem}',
+            body: '${med.utente} • ${med.dosagem} • 1x por dia',
             time: TimeOfDay(hour: hour, minute: minute),
             payload: med.id.toString(),
           );
+        } else {
+          // Dias específicos → 1 alarme por dia selecionado
+          for (final day in med.diasSemana) {
+            await NotificationService().scheduleWeeklyNotification(
+              id: med.id * 10 + day,
+              title: '💊 Hora de tomar ${med.medicamento}!',
+              body: '${med.utente} • ${med.dosagem} • 1x por dia',
+              time: TimeOfDay(hour: hour, minute: minute),
+              dayOfWeek: day,
+              payload: med.id.toString(),
+            );
+          }
         }
       }
     } catch (e) {
-      // Silencioso - alarme falhou mas medicamento foi guardado
+      // Silencioso
     }
   }
 
@@ -238,7 +228,6 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Seção: Informações Básicas
             _buildSectionHeader('Informações', Icons.info_outline),
             const SizedBox(height: 12),
             
@@ -251,9 +240,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
               ),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Campo obrigatório';
-                }
+                if (value == null || value.trim().isEmpty) return 'Campo obrigatório';
                 return null;
               },
             ),
@@ -268,9 +255,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
               ),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Campo obrigatório';
-                }
+                if (value == null || value.trim().isEmpty) return 'Campo obrigatório';
                 return null;
               },
             ),
@@ -284,28 +269,22 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
                 prefixIcon: Icon(Icons.science),
               ),
               validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Campo obrigatório';
-                }
+                if (value == null || value.trim().isEmpty) return 'Campo obrigatório';
                 return null;
               },
             ),
             
             const SizedBox(height: 32),
-            
-            // Seção: Horário
             _buildSectionHeader('Horário', Icons.access_time),
             const SizedBox(height: 12),
             
             InkWell(
-              onTap: () async {
+              onTap: () {
                 showDialog(
                   context: context,
                   builder: (context) => TimeNumpad(
                     initialTime: _horaController.text,
-                    onTimeSelected: (time) {
-                      setState(() => _horaController.text = time);
-                    },
+                    onTimeSelected: (time) => setState(() => _horaController.text = time),
                   ),
                 );
               },
@@ -317,13 +296,8 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
                   suffixIcon: Icon(Icons.keyboard),
                 ),
                 child: Text(
-                  _horaController.text.isEmpty 
-                      ? 'Toca para selecionar' 
-                      : _horaController.text,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _horaController.text.isEmpty ? Colors.grey : null,
-                  ),
+                  _horaController.text.isEmpty ? 'Toca para selecionar' : _horaController.text,
+                  style: TextStyle(fontSize: 16, color: _horaController.text.isEmpty ? Colors.grey : null),
                 ),
               ),
             ),
@@ -332,16 +306,8 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
             
             SegmentedButton<bool>(
               segments: const [
-                ButtonSegment(
-                  value: false,
-                  label: Text('Toma diaria unica'),
-                  icon: Icon(Icons.schedule),
-                ),
-                ButtonSegment(
-                  value: true,
-                  label: Text('Varias tomas por dia'),
-                  icon: Icon(Icons.repeat),
-                ),
+                ButtonSegment(value: false, label: Text('Toma diaria unica'), icon: Icon(Icons.schedule)),
+                ButtonSegment(value: true, label: Text('Varias tomas por dia'), icon: Icon(Icons.repeat)),
               ],
               selected: {_isRecorrente},
               onSelectionChanged: (Set<bool> selection) {
@@ -353,10 +319,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
                 value: _intervaloHoras,
-                decoration: const InputDecoration(
-                  labelText: 'Intervalo',
-                  prefixIcon: Icon(Icons.timer),
-                ),
+                decoration: const InputDecoration(labelText: 'Intervalo', prefixIcon: Icon(Icons.timer)),
                 items: const [
                   DropdownMenuItem(value: 4, child: Text('De 4 em 4 horas')),
                   DropdownMenuItem(value: 6, child: Text('De 6 em 6 horas')),
@@ -364,16 +327,12 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
                   DropdownMenuItem(value: 12, child: Text('De 12 em 12 horas')),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _intervaloHoras = value);
-                  }
+                  if (value != null) setState(() => _intervaloHoras = value);
                 },
               ),
             ],
             
             const SizedBox(height: 32),
-            
-            // Seção: Período
             _buildSectionHeader('Período', Icons.calendar_month),
             const SizedBox(height: 12),
             
@@ -405,16 +364,11 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
                       : '${_selectedDateRange!.start.day}/${_selectedDateRange!.start.month} - '
                         '${_selectedDateRange!.end.day}/${_selectedDateRange!.end.month}',
                 ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                  alignment: Alignment.centerLeft,
-                ),
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16), alignment: Alignment.centerLeft),
               ),
             ],
             
             const SizedBox(height: 32),
-            
-            // Seção: Dias da Semana
             _buildSectionHeader('Dias da Semana', Icons.today),
             const SizedBox(height: 12),
             
@@ -448,7 +402,6 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
               children: List.generate(7, (i) {
                 final day = i + 1;
                 final isSelected = _selectedDays.contains(day);
-                
                 return FilterChip(
                   label: Text(_daysLabels[i]),
                   selected: isSelected,
@@ -468,21 +421,13 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
             
             const SizedBox(height: 32),
             
-            // Botão Guardar
             SizedBox(
               width: double.infinity,
               height: 56,
               child: FilledButton.icon(
                 onPressed: _isLoading ? null : _guardar,
-                icon: _isLoading 
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
+                icon: _isLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : Icon(_isEditing ? Icons.save : Icons.add),
                 label: Text(_isEditing ? 'Guardar Alterações' : 'Adicionar Medicamento'),
               ),
@@ -502,10 +447,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.teal,
-              ),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.teal),
         ),
       ],
     );

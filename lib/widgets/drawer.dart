@@ -12,21 +12,28 @@ class AppDrawer extends StatelessWidget {
     required this.toggleTheme,
   });
 
-  // 🔹 NOVA: Ver alarmes de MEDICAMENTOS
+  // 🔹 Ver alarmes de MEDICAMENTOS (agrupados)
   Future<void> _verAlarmesMedicamentos(BuildContext context) async {
     final todosAlarmes = await NotificationService().getPendingNotifications();
-    
+
     // Filtrar: IDs de medicamentos < 10000
     final alarmes = todosAlarmes.where((a) => a.id < 10000).toList();
 
+    // Agrupar por título + body (title+body iguais = mesmo medicamento)
+    final Map<String, List<dynamic>> grupos = {};
+    for (var a in alarmes) {
+      final chave = '${a.title}_${a.body}';
+      grupos.putIfAbsent(chave, () => []).add(a);
+    }
+
     if (!context.mounted) return;
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('💊 Alarmes de Medicamentos (${alarmes.length})'),
+        title: Text('💊 Alarmes de Medicamentos (${grupos.length})'),
         content: SingleChildScrollView(
-          child: alarmes.isEmpty
+          child: grupos.isEmpty
               ? const Text(
                   'Nenhum alarme de medicamento agendado.\n\n'
                   'Adicione medicamentos para criar alarmes.',
@@ -37,30 +44,40 @@ class AppDrawer extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Total: ${alarmes.length} alarme(s)',
+                      'Total: ${grupos.length} alarme(s)',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const Divider(),
                     const SizedBox(height: 8),
-                    ...alarmes.map((a) => Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            dense: true,
-                            leading: const Icon(Icons.medication, size: 20, color: Colors.teal),
-                            title: Text(
-                              a.title ?? 'Sem título',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            subtitle: Text(
-                              a.body ?? 'Sem descrição',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            trailing: Text(
-                              '#${a.id}',
-                              style: const TextStyle(fontSize: 10, color: Colors.grey),
-                            ),
+                    ...grupos.values.map((grupo) {
+                      final primeiro = grupo.first;
+                      final quantidade = grupo.length;
+
+                      // Calcular label dos dias
+                      String diasLabel;
+                      if (quantidade == 7) {
+                        diasLabel = 'Todos os dias';
+                      } else if (quantidade == 1) {
+                        diasLabel = '1 dia por semana';
+                      } else {
+                        diasLabel = '$quantidade dias por semana';
+                      }
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: const Icon(Icons.medication, color: Colors.teal),
+                          title: Text(
+                            primeiro.title ?? 'Sem título',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-                        )),
+                          subtitle: Text(
+                            '${primeiro.body ?? ''}\n📅 $diasLabel',
+                          ),
+                          isThreeLine: true,
+                        ),
+                      );
+                    }),
                   ],
                 ),
         ),
@@ -74,7 +91,7 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  // 🔹 NOVA: Ver alarmes de CONSULTAS
+  // 🔹 Ver alarmes de CONSULTAS
   Future<void> _verAlarmesConsultas(BuildContext context) async {
     final todosAlarmes = await NotificationService().getPendingNotifications();
     
@@ -186,20 +203,19 @@ class AppDrawer extends StatelessWidget {
           ),
 
           /* ================= TEMA ================= */
-        SwitchListTile(
-          title: const Text('Modo escuro'),
-          secondary: Icon(
-            isDarkMode ? Icons.dark_mode : Icons.light_mode, // 🔹 Muda dinamicamente
-            color: isDarkMode ? Colors.amber : Colors.orange,
+          SwitchListTile(
+            title: const Text('Modo escuro'),
+            secondary: Icon(
+              isDarkMode ? Icons.dark_mode : Icons.light_mode,
+              color: isDarkMode ? Colors.amber : Colors.orange,
+            ),
+            value: isDarkMode,
+            onChanged: (_) => toggleTheme(),
           ),
-          value: isDarkMode,
-          onChanged: (_) => toggleTheme(),
-        ),
 
           const Divider(),
 
           /* ================= ALARMES ================= */
-          // 🔹 Ver alarmes de MEDICAMENTOS
           ListTile(
             leading: const Icon(Icons.medication, color: Colors.teal),
             title: const Text('Ver alarmes de medicamentos'),
@@ -210,7 +226,6 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
-          //Ver alarmes de CONSULTAS
           ListTile(
             leading: const Icon(Icons.calendar_today, color: Colors.blue),
             title: const Text('Ver alarmes de consultas'),
@@ -220,7 +235,6 @@ class AppDrawer extends StatelessWidget {
               _verAlarmesConsultas(context);
             },
           ),
-
 
           const Divider(),
 
@@ -299,14 +313,14 @@ class AppDrawer extends StatelessWidget {
           const Divider(),
 
           /* ================= SOBRE/INFORMAÇÃO ================= */
-         ListTile(
+          ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child:Icon(
+              child: Icon(
                 Icons.info_outline,
                 color: Colors.grey.shade700,
               ),
@@ -317,7 +331,7 @@ class AppDrawer extends StatelessWidget {
               'Não deve ser utilizada como substituto de aconselhamento médico profissional. '
               'Consulte sempre um profissional de saúde qualificado para questões relacionadas com a sua saúde e medicação.',
             ),
-         )
+          )
         ],
       ),
     );

@@ -156,7 +156,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
 
     try {
       if (med.recorrente && med.intervaloHoras != null) {
-        // 🔹 Várias tomas por dia — cria um alarme por toma, repete todos os dias
+        // Várias tomas por dia — cria um alarme por toma, repete todos os dias
         final numAlarmes = 24 ~/ med.intervaloHoras!;
         for (int i = 0; i < numAlarmes; i++) {
           final tomaHour = (hour + med.intervaloHoras! * i) % 24;
@@ -169,7 +169,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
           );
         }
       } else {
-        // 🔹 Toma única diária
+        // Toma única diária
         if (med.diasSemana.length == 7) {
           // Todos os dias → 1 único alarme diário
           await NotificationService().scheduleDailyNotification(

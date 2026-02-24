@@ -10,7 +10,7 @@ class IAService {
     String medicamento, 
     String tipoConsulta,
   ) async {
-    // 🔹 Verificar se URL está configurada
+    // Verificar se URL está configurada
     if (baseUrl.isEmpty) {
       return '❌ Erro: API_BASE_URL não configurada no ficheiro .env';
     }
@@ -32,13 +32,13 @@ class IAService {
         return 'Erro ao consultar medicamento (${response.statusCode}). Tenta novamente.';
       }
     } catch (e) {
-      print('❌ Erro ao consultar medicamento: $e');  // 🔹 Debug
+      print('❌ Erro ao consultar medicamento: $e');  // Debug
       return 'Erro de conexão. Verifica a tua internet.';
     }
   }
 
   Future<bool> verificarStatus() async {
-    // 🔹 Verificar se URL está configurada
+    // Verificar se URL está configurada
     if (baseUrl.isEmpty) {
       print('❌ API_BASE_URL não configurada no .env');
       return false;
@@ -47,11 +47,11 @@ class IAService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/health'),
-      ).timeout(const Duration(seconds: 5));  // 🔹 Timeout
+      ).timeout(const Duration(seconds: 5));  // Timeout
       
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ Erro ao verificar status: $e');  // 🔹 Debug
+      print('❌ Erro ao verificar status: $e');  // Debug
       return false;
     }
   }

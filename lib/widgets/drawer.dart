@@ -12,7 +12,7 @@ class AppDrawer extends StatelessWidget {
     required this.toggleTheme,
   });
 
-  // 🔹 Ver alarmes de MEDICAMENTOS (agrupados)
+  // Ver alarmes de MEDICAMENTOS (agrupados)
   Future<void> _verAlarmesMedicamentos(BuildContext context) async {
     final todosAlarmes = await NotificationService().getPendingNotifications();
 
@@ -91,7 +91,7 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  // 🔹 Ver alarmes de CONSULTAS
+  // Ver alarmes de CONSULTAS
   Future<void> _verAlarmesConsultas(BuildContext context) async {
     final todosAlarmes = await NotificationService().getPendingNotifications();
     

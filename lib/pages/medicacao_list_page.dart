@@ -79,13 +79,20 @@ class _MedicationListPageState extends State<MedicationListPage> {
     try {
       // Cancelar alarmes
       if (med.recorrente && med.intervaloHoras != null) {
+        // Alarmes recorrentes (várias tomas por dia)
         final numAlarmes = 24 ~/ med.intervaloHoras!;
         for (int i = 0; i < numAlarmes; i++) {
           await NotificationService().cancelNotification(med.id * 100 + i);
         }
       } else {
-        for (final day in med.diasSemana) {
-          await NotificationService().cancelNotification(med.id * 10 + day);
+        if (med.diasSemana.length == 7) {
+          // Alarme diário único — ID simples
+          await NotificationService().cancelNotification(med.id);
+        } else {
+          // Alarmes semanais por dia específico
+          for (final day in med.diasSemana) {
+            await NotificationService().cancelNotification(med.id * 10 + day);
+          }
         }
       }
 
@@ -211,11 +218,7 @@ class _MedicationListPageState extends State<MedicationListPage> {
         padding: const EdgeInsets.all(32),
         children: [
           const SizedBox(height: 60),
-          Icon(
-            Icons.medication_outlined,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
+          Icon(Icons.medication_outlined, size: 80, color: Colors.grey.shade400),
           const SizedBox(height: 24),
           Text(
             'Nenhum medicamento',
@@ -251,9 +254,7 @@ class _MedicationListPageState extends State<MedicationListPage> {
   Widget _buildMedicamentoCard(Medicamento med) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () async {
           final resultado = await Navigator.push<bool>(
@@ -265,10 +266,7 @@ class _MedicationListPageState extends State<MedicationListPage> {
               ),
             ),
           );
-          
-          if (resultado == true) {
-            _loadMedicamentos();
-          }
+          if (resultado == true) _loadMedicamentos();
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -284,11 +282,7 @@ class _MedicationListPageState extends State<MedicationListPage> {
                       color: Colors.teal.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.medication,
-                      color: Colors.teal.shade700,
-                      size: 24,
-                    ),
+                    child: Icon(Icons.medication, color: Colors.teal.shade700, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -348,10 +342,7 @@ class _MedicationListPageState extends State<MedicationListPage> {
                             ),
                           ),
                         );
-                        
-                        if (resultado == true) {
-                          _loadMedicamentos();
-                        }
+                        if (resultado == true) _loadMedicamentos();
                       }
                     },
                   ),
@@ -371,10 +362,7 @@ class _MedicationListPageState extends State<MedicationListPage> {
                     _formatPeriodo(med),
                   ),
                   if (med.recorrente && med.intervaloHoras != null)
-                    _buildInfoChip(
-                      Icons.repeat,
-                      'De ${med.intervaloHoras}h em ${med.intervaloHoras}h',
-                    ),
+                    _buildInfoChip(Icons.repeat, 'De ${med.intervaloHoras}h em ${med.intervaloHoras}h'),
                 ],
               ),
             ],
@@ -387,10 +375,7 @@ class _MedicationListPageState extends State<MedicationListPage> {
   Widget _buildInfoChip(IconData icon, String label) {
     return Chip(
       avatar: Icon(icon, size: 16),
-      label: Text(
-        label,
-        style: const TextStyle(fontSize: 12),
-      ),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       visualDensity: VisualDensity.compact,
     );

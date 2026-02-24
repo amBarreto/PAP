@@ -92,7 +92,7 @@ class NotificationService {
     );
   }
 
-  // 🔹 Notificação diária — repete todos os dias à mesma hora (1 alarme apenas)
+  // Notificação diária — repete todos os dias à mesma hora (1 alarme apenas)
   Future<void> scheduleDailyNotification({
     required int id,
     required String title,
@@ -127,7 +127,7 @@ class NotificationService {
     );
   }
 
-  // 🔹 Notificação semanal — repete apenas num dia específico da semana
+  // Notificação semanal — repete apenas num dia específico da semana
   // dayOfWeek: 1=Segunda, 2=Terça, 3=Quarta, 4=Quinta, 5=Sexta, 6=Sábado, 7=Domingo
   Future<void> scheduleWeeklyNotification({
     required int id,
@@ -165,7 +165,7 @@ class NotificationService {
     );
   }
 
-  // 🔹 Notificação recorrente (várias tomas por dia) — repete todos os dias à mesma hora
+  // Notificação recorrente (várias tomas por dia) — repete todos os dias à mesma hora
   Future<void> scheduleRepeatingNotification({
     required int id,
     required String title,

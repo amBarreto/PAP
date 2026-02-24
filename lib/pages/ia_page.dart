@@ -7,7 +7,7 @@ class IAPage extends StatefulWidget {
 
   const IAPage({
     super.key,
-    this.showAppBar = true,
+    this.showAppBar = false,
   });
 
   @override

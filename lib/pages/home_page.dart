@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
     toggleTheme: widget.toggleTheme,
     showAppBar: false,
   ),
-  const IAPage(showAppBar: true),
+  const IAPage(showAppBar: false),
 ];
 
     return Scaffold(

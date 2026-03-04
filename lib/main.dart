@@ -45,7 +45,7 @@ class _MediHoraAppState extends State<MediHoraApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MediHora',
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: true,
       themeMode: _themeMode,
       
       theme: ThemeData(

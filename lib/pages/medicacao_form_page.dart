@@ -171,7 +171,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
       } else {
         // Toma única diária
         if (med.diasSemana.length == 7) {
-          // Todos os dias → 1 único alarme diário
+          // Todos os dias -> 1 único alarme diário
           await NotificationService().scheduleDailyNotification(
             id: med.id, // ID simples, sem multiplicar por dia
             title: '💊 Hora de tomar ${med.medicamento}!',
@@ -180,7 +180,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
             payload: med.id.toString(),
           );
         } else {
-          // Dias específicos → 1 alarme por dia selecionado
+          // Dias específicos -> 1 alarme por dia selecionado
           for (final day in med.diasSemana) {
             await NotificationService().scheduleWeeklyNotification(
               id: med.id * 10 + day,

@@ -158,11 +158,11 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
     }
   }
 
-  String _formatData(DateTime data) {
+  String _formatData(DateTime data) { // DD/MM/YYYY
     return '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
   }
 
-  String _formatHora(DateTime data) {
+  String _formatHora(DateTime data) { // HH:MM
     return '${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}';
   }
 

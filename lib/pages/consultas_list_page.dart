@@ -36,10 +36,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
     setState(() => _isLoading = true);
     try {
       final consultas = await isar.consultas.where().findAll();
-      
-      // Ordenar por data
       consultas.sort((a, b) => a.dataHora.compareTo(b.dataHora));
-      
       if (mounted) {
         setState(() {
           _consultas = consultas;
@@ -85,9 +82,9 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
       await isar.writeTxn(() async {
         await isar.consultas.delete(consulta.id);
       });
-      
+
       await _loadConsultas();
-      
+
       if (mounted) {
         _showSuccessSnackBar('Consulta removida com sucesso!');
       }
@@ -102,9 +99,8 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
     }
   }
 
-  // 🔹 Apagar consultas com mais de 15 dias
   Future<void> _limparConsultasAntigas() async {
-    final limite = DateTime.now().subtract(const Duration(days: 15));
+    final limite = DateTime.now().subtract(const Duration(days: 0));
     final antigas = _consultas.where((c) => c.dataHora.isBefore(limite)).toList();
 
     if (antigas.isEmpty) {
@@ -242,10 +238,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
               ),
             ),
           );
-          
-          if (resultado == true) {
-            _loadConsultas();
-          }
+          if (resultado == true) _loadConsultas();
         },
         icon: const Icon(Icons.add),
         label: const Text('Agendar'),
@@ -266,11 +259,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
         padding: const EdgeInsets.all(32),
         children: [
           const SizedBox(height: 60),
-          Icon(
-            Icons.calendar_month_outlined,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
+          Icon(Icons.calendar_month_outlined, size: 80, color: Colors.grey.shade400),
           const SizedBox(height: 24),
           Text(
             'Nenhuma consulta',
@@ -294,8 +283,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
 
     final proximasConsultas = _consultas.where((c) => !_isPassada(c.dataHora)).toList();
     final consultasPassadas = _consultas.where((c) => _isPassada(c.dataHora)).toList();
-    // 🔹 Consultas com mais de 15 dias (para mostrar o botão)
-    final limite = DateTime.now().subtract(const Duration(days: 15));
+    final limite = DateTime.now().subtract(const Duration(days: 0));
     final temAntigas = consultasPassadas.any((c) => c.dataHora.isBefore(limite));
 
     return ListView(
@@ -310,9 +298,8 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
               )),
           const SizedBox(height: 24),
         ],
-        
+
         if (consultasPassadas.isNotEmpty) ...[
-          // 🔹 Header com botão de limpar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -356,7 +343,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
 
   Widget _buildConsultaCard(Consulta consulta, {bool isPassada = false}) {
     final isProxima = _isProxima(consulta.dataHora);
-    
+
     return Card(
       elevation: isProxima ? 4 : 2,
       shape: RoundedRectangleBorder(
@@ -366,21 +353,20 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
             : BorderSide.none,
       ),
       child: InkWell(
-        onTap: isPassada ? null : () async {
-          final resultado = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ConsultationFormPage(
-                isDarkMode: widget.isDarkMode,
-                consulta: consulta,
-              ),
-            ),
-          );
-          
-          if (resultado == true) {
-            _loadConsultas();
-          }
-        },
+        onTap: isPassada
+            ? null
+            : () async {
+                final resultado = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ConsultationFormPage(
+                      isDarkMode: widget.isDarkMode,
+                      consulta: consulta,
+                    ),
+                  ),
+                );
+                if (resultado == true) _loadConsultas();
+              },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -392,8 +378,8 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isPassada 
-                          ? Colors.grey.shade200 
+                      color: isPassada
+                          ? Colors.grey.shade200
                           : isProxima
                               ? Colors.orange.shade100
                               : Colors.blue.shade100,
@@ -401,8 +387,8 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
                     ),
                     child: Icon(
                       Icons.medical_services,
-                      color: isPassada 
-                          ? Colors.grey.shade600 
+                      color: isPassada
+                          ? Colors.grey.shade600
                           : isProxima
                               ? Colors.orange.shade700
                               : Colors.blue.shade700,
@@ -414,29 +400,30 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Utente como título principal
                         Text(
-                          consulta.medico,
+                          consulta.utente,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: isPassada ? Colors.grey.shade600 : null,
                               ),
                         ),
                         const SizedBox(height: 4),
+                        // Médico como subtítulo
                         Text(
-                          consulta.especialidade,
+                          consulta.medico,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Colors.grey.shade600,
                               ),
                         ),
-                        if (consulta.utente.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            'Utente: ${consulta.utente}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade500,
-                                ),
-                          ),
-                        ],
+                        const SizedBox(height: 2),
+                        // Especialidade na linha extra
+                        Text(
+                          consulta.especialidade,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey.shade500,
+                              ),
+                        ),
                       ],
                     ),
                   ),
@@ -472,64 +459,37 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
                           final resultado = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
-              builder: (context) => ConsultationFormPage(
+                              builder: (context) => ConsultationFormPage(
                                 isDarkMode: widget.isDarkMode,
                                 consulta: consulta,
                               ),
                             ),
                           );
-                          
-                          if (resultado == true) {
-                            _loadConsultas();
-                          }
+                          if (resultado == true) _loadConsultas();
                         }
                       },
                     ),
                 ],
               ),
-              
+
               const Divider(height: 24),
-              
+
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildInfoChip(
-                    Icons.calendar_today,
-                    _formatData(consulta.dataHora),
-                    isPassada: isPassada,
-                  ),
-                  _buildInfoChip(
-                    Icons.access_time,
-                    _formatHora(consulta.dataHora),
-                    isPassada: isPassada,
-                  ),
-                  _buildInfoChip(
-                    Icons.location_on,
-                    consulta.local,
-                    isPassada: isPassada,
-                  ),
+                  _buildInfoChip(Icons.calendar_today, _formatData(consulta.dataHora), isPassada: isPassada),
+                  _buildInfoChip(Icons.access_time, _formatHora(consulta.dataHora), isPassada: isPassada),
+                  _buildInfoChip(Icons.location_on, consulta.local, isPassada: isPassada),
                   if (consulta.notificar1DiaAntes)
-                    _buildInfoChip(
-                      Icons.notifications_active,
-                      '1 dia antes',
-                      isPassada: isPassada,
-                    ),
+                    _buildInfoChip(Icons.notifications_active, '1 dia antes', isPassada: isPassada),
                   if (consulta.notificar1HoraAntes)
-                    _buildInfoChip(
-                      Icons.notifications,
-                      '1 hora antes',
-                      isPassada: isPassada,
-                    ),
+                    _buildInfoChip(Icons.notifications, '1 hora antes', isPassada: isPassada),
                   if (consulta.observacoes != null && consulta.observacoes!.isNotEmpty)
-                    _buildInfoChip(
-                      Icons.note,
-                      'Com observações',
-                      isPassada: isPassada,
-                    ),
+                    _buildInfoChip(Icons.note, 'Com observações', isPassada: isPassada),
                 ],
               ),
-              
+
               if (isProxima && !isPassada) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -542,9 +502,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.notification_important, 
-                           size: 16, 
-                           color: Colors.orange.shade700),
+                      Icon(Icons.notification_important, size: 16, color: Colors.orange.shade700),
                       const SizedBox(width: 8),
                       Text(
                         'Consulta esta semana!',
@@ -570,10 +528,7 @@ class _ConsultationListPageState extends State<ConsultationListPage> {
       avatar: Icon(icon, size: 16),
       label: Text(
         label,
-        style: TextStyle(
-          fontSize: 12,
-          color: isPassada ? Colors.grey.shade600 : null,
-        ),
+        style: TextStyle(fontSize: 12, color: isPassada ? Colors.grey.shade600 : null),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       visualDensity: VisualDensity.compact,

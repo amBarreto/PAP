@@ -290,14 +290,14 @@ class _MedicationListPageState extends State<MedicationListPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          med.medicamento,
+                          med.utente,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${med.utente} • ${med.dosagem}',
+                          '${med.medicamento} • ${med.dosagem}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Colors.grey.shade600,
                               ),

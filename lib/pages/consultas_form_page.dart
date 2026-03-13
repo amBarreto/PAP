@@ -20,7 +20,7 @@ class ConsultationFormPage extends StatefulWidget {
 }
 
 class _ConsultationFormPageState extends State<ConsultationFormPage> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); //validar campos / estado do form
   
   // Controllers
   final _utenteController = TextEditingController();
@@ -47,7 +47,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
   }
 
   void _loadConsultaData() {
-    final consulta = widget.consulta!;
+    final consulta = widget.consulta!; // not nule
     _utenteController.text = consulta.utente;
     _medicoController.text = consulta.medico;
     _especialidadeController.text = consulta.especialidade;
@@ -152,7 +152,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       await _agendarAlarmes(consulta);
       
       if (mounted) {
-        Navigator.pop(context, true);
+        Navigator.pop(context, true); //fecha pagina
       }
     } catch (e) {
       if (mounted) {
@@ -198,11 +198,11 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
     }
   }
 
-  String _formatData(DateTime data) {
+  String _formatData(DateTime data) { // DD/MM/YYYY
     return '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
   }
 
-  String _formatHora(DateTime data) {
+  String _formatHora(DateTime data) { // HH:MM
     return '${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}';
   }
 
@@ -236,7 +236,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Seção: Informações da Consulta
+            // Secção: Informações da Consulta
             _buildSectionHeader('Informações da Consulta', Icons.medical_services),
             const SizedBox(height: 12),
             
@@ -309,11 +309,11 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
             
             const SizedBox(height: 32),
             
-            // Seção: Data e Hora
+            // Secção: Data e Hora
             _buildSectionHeader('Data e Hora', Icons.calendar_today),
             const SizedBox(height: 12),
             
-            // 🔹 CAMPO DATA (permanece igual)
+            //  CAMPO DATA 
             InkWell(
               onTap: _pickDate,
               borderRadius: BorderRadius.circular(12),
@@ -337,7 +337,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
             
             const SizedBox(height: 16),
             
-            // 🔹 CAMPO HORA (NUMPAD)
+            // Numpad
             InkWell(
               onTap: () async {
                 // Converter TimeOfDay para String formato HH:MM
@@ -372,7 +372,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                 decoration: const InputDecoration(
                   labelText: 'Hora *',
                   prefixIcon: Icon(Icons.access_time),
-                  suffixIcon: Icon(Icons.keyboard),  // 🔹 Ícone teclado
+                  suffixIcon: Icon(Icons.keyboard),  //  Ícone teclado
                 ),
                 child: Text(
                   _selectedTime == null 
@@ -388,7 +388,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
             
             const SizedBox(height: 32),
             
-            // Seção: Lembretes
+            // Secção: Lembretes
             _buildSectionHeader('Lembretes', Icons.notifications_active),
             const SizedBox(height: 12),
             
@@ -424,7 +424,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
             
             const SizedBox(height: 32),
             
-            // Seção: Observações
+            // Secção: Observações
             _buildSectionHeader('Observações', Icons.note),
             const SizedBox(height: 12),
             

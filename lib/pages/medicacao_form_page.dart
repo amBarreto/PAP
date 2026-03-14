@@ -96,6 +96,10 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
       _showErrorSnackBar('Seleciona o período do medicamento');
       return;
     }
+    if (_horaController.text.isEmpty) {
+      _showErrorSnackBar('Seleciona a hora do medicamento');
+      return;
+    }
 
     setState(() => _isLoading = true);
 

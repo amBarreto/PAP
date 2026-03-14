@@ -53,7 +53,6 @@ class _IAPageState extends State<IAPage> {
     {
       'id': 'interacoes',
       'titulo': 'Interações',
-
       'icon': Icons.sync_problem,
       'cor': Colors.purple,
     },
@@ -73,7 +72,7 @@ class _IAPageState extends State<IAPage> {
   Future<void> consultarMedicamento(String tipoConsulta) async {
     if (medicamentoController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escreve o nome do medicamento')),
+        const SnackBar(content: Text('Escreva o nome do medicamento')),
       );
       return;
     }
@@ -188,7 +187,7 @@ class _IAPageState extends State<IAPage> {
 
             // Título das categorias
             const Text(
-              'O que queres saber?',
+              'O que deseja saber?',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -243,7 +242,7 @@ class _IAPageState extends State<IAPage> {
               const SizedBox(height: 24),
               Card(
                 elevation: 4,
-                color: isDark ? Colors.grey.shade900 : Colors.blue.shade50,
+                color: isDark ? Colors.grey.shade900 : Colors.grey.shade200,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -262,7 +261,7 @@ class _IAPageState extends State<IAPage> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.blue.shade900,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                           ),
@@ -302,7 +301,7 @@ class _IAPageState extends State<IAPage> {
                                 'Esta informação não substitui consulta médica',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.amber.shade900,
+                                  color: Colors.deepOrange.shade900,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),

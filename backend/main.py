@@ -115,7 +115,7 @@ async def consultar_medicamento(request: MedicamentoRequest):
 
         # Usa Gemini 2.5 Flash (mais recente!)
         response = client.models.generate_content(
-            model='models/gemini-2.5-flash',
+            model='models/gemini-2.0-flash',
             contents=prompt 
         )
         

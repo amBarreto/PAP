@@ -161,7 +161,7 @@ class _MedicationFormPageState extends State<MedicationFormPage> {
     try {
       if (med.recorrente && med.intervaloHoras != null) {
         // Várias tomas por dia — cria um alarme por toma, repete todos os dias
-        final numAlarmes = 24 ~/ med.intervaloHoras!;
+        final numAlarmes = 24 ~/ med.intervaloHoras!; //divisao inteira
         for (int i = 0; i < numAlarmes; i++) {
           final tomaHour = (hour + med.intervaloHoras! * i) % 24;
           await NotificationService().scheduleRepeatingNotification(

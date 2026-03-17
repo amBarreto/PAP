@@ -23,7 +23,7 @@ class IAService {
           'medicamento': medicamento,
           'tipo_consulta': tipoConsulta,
         }),
-      ).timeout(const Duration(seconds: 90));  //Timeout para evitar espera infinita
+      ).timeout(const Duration(seconds: 120));  //Timeout para evitar espera infinita
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));

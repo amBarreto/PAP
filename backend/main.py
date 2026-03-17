@@ -90,7 +90,7 @@ class RespostaResponse(BaseModel):
 @app.get("/")
 async def root():
     return {
-        "message": "MediHora IA API (Google Gemini 2.5)",
+        "message": "MediHora IA API (Google Gemini 2.0)",
         "status": "online",
         "version": "1.0.0",
         "endpoints": {
@@ -113,9 +113,9 @@ async def consultar_medicamento(request: MedicamentoRequest):
         prompt = f"{SYSTEM_PROMPT}\n\n{prompt_template.format(medicamento=request.medicamento)}"
            
 
-        # Usa Gemini 2.5 Flash (mais recente!)
+        # Usa Gemini 2.0 Flash (mais recente!)
         response = client.models.generate_content(
-            model='models/gemini-2.0-flash',
+            model='gemini-2.0-flash',
             contents=prompt 
         )
         

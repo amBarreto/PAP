@@ -115,7 +115,7 @@ async def consultar_medicamento(request: MedicamentoRequest):
 
         # Usa Gemini 2.0 Flash (mais recente!)
         response = client.models.generate_content(
-            model='gemini-2.5-flash-preview-04-17',
+            model='gemini-2.5-flash-preview-05-20',
             contents=prompt 
         )
         
@@ -135,7 +135,7 @@ async def consultar_medicamento(request: MedicamentoRequest):
 @app.get("/health") 
 async def health_check():
     return {"status": "healthy", 
-    "model": "gemini-2.5-flash-preview-04-17",
+    "model": "gemini-2.5-flash-preview-05-20",
     "timestamp": datetime.now().isoformat()
     }
 

@@ -135,7 +135,7 @@ async def consultar_medicamento(request: MedicamentoRequest):
 @app.get("/health") 
 async def health_check():
     return {"status": "healthy", 
-    "model": "gemini-2.5-flash",
+    "model": "gemini-2.0-flash",
     "timestamp": datetime.now().isoformat()
     }
 
